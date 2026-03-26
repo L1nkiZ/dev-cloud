@@ -67,7 +67,8 @@ services:
   ###################################################
   backend:
     build:
-      context: ./
+      context: ./backend
+      dockerfile: Dockerfile
       target: backend-dev
     environment:
       MYSQL_HOST: mysql
@@ -105,7 +106,8 @@ services:
   ###################################################
   client:
     build:
-      context: ./
+      context: ./client
+      dockerfile: Dockerfile
       target: client-dev
     develop:
       watch:

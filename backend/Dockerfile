@@ -4,44 +4,8 @@
 # This base stage ensures all other stages are using the same base image
 # and provides common configuration for all stages, such as the working dir.
 ###################################################
-FROM node:22 AS base
+FROM node:latest AS base
 WORKDIR /usr/local/app
-
-################## CLIENT STAGES ##################
-
-###################################################
-# Stage: client-base
-#
-# This stage is used as the base for the client-dev and client-build stages,
-# since there are common steps needed for each.
-###################################################
-FROM base AS client-base
-COPY client/package.json client/package-lock.json ./
-RUN npm install
-COPY client/.eslintrc.cjs client/index.html client/vite.config.js ./
-COPY client/public ./public
-COPY client/src ./src
-
-###################################################
-# Stage: client-dev
-# 
-# This stage is used for development of the client application. It sets 
-# the default command to start the Vite development server.
-###################################################
-FROM client-base AS client-dev
-CMD ["npm", "run", "dev"]
-
-###################################################
-# Stage: client-build
-#
-# This stage builds the client application, producing static HTML, CSS, and
-# JS files that can be served by the backend.
-###################################################
-FROM client-base AS client-build
-RUN npm run build
-
-
-
 
 ###################################################
 ################  BACKEND STAGES  #################
@@ -54,10 +18,10 @@ RUN npm run build
 # there are common steps needed for each.
 ###################################################
 FROM base AS backend-dev
-COPY backend/package.json backend/package-lock.json ./
+COPY package.json package-lock.json ./
 RUN npm install
-COPY backend/spec ./spec
-COPY backend/src ./src
+COPY spec ./spec
+COPY src ./src
 CMD ["npm", "run", "dev"]
 
 ###################################################
@@ -84,7 +48,7 @@ ENV NODE_ENV=production
 COPY --from=test /usr/local/app/package.json /usr/local/app/package-lock.json ./
 RUN npm ci --production && \
     npm cache clean --force
-COPY backend/src ./src
+COPY src ./src
 COPY --from=client-build /usr/local/app/dist ./src/static
 EXPOSE 3000
 CMD ["node", "src/index.js"]
