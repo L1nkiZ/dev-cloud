@@ -4,11 +4,22 @@ import { ItemDisplay } from './ItemDisplay';
 
 export function TodoListCard() {
     const [items, setItems] = useState(null);
+    const [error, setError] = useState('');
 
     useEffect(() => {
         fetch('/api/items')
-            .then((r) => r.json())
-            .then(setItems);
+            .then((r) => {
+                if (!r.ok) {
+                    throw new Error(`API error: ${r.status}`);
+                }
+
+                return r.json();
+            })
+            .then(setItems)
+            .catch(() => {
+                setError('Backend indisponible. Verifie que le serveur tourne.');
+                setItems([]);
+            });
     }, []);
 
     const onNewItem = useCallback(
@@ -42,6 +53,7 @@ export function TodoListCard() {
 
     return (
         <>
+            {error && <p className="text-center text-danger">{error}</p>}
             <AddItemForm onNewItem={onNewItem} />
             {items.length === 0 && (
                 <p className="text-center">No items yet! Add one above!</p>
