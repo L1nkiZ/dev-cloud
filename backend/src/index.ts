@@ -1,11 +1,16 @@
-const express = require('express');
+import 'dotenv/config';
+import express from 'express';
+import type { TodoPersistence } from './types';
+
 const app = express();
-const db = require('./persistence');
+const db = require('./persistence') as TodoPersistence;
 const getGreeting = require('./routes/getGreeting');
 const getItems = require('./routes/getItems');
 const addItem = require('./routes/addItem');
 const updateItem = require('./routes/updateItem');
 const deleteItem = require('./routes/deleteItem');
+
+const port = Number(process.env.PORT || 3000);
 
 app.use(express.json());
 app.use(express.static(__dirname + '/static'));
@@ -18,9 +23,9 @@ app.delete('/api/items/:id', deleteItem);
 
 db.init()
     .then(() => {
-        app.listen(3000, () => console.log('Listening on port 3000'));
+        app.listen(port, () => console.log(`Listening on port ${port}`));
     })
-    .catch((err) => {
+    .catch((err: unknown) => {
         console.error(err);
         process.exit(1);
     });
