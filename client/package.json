@@ -7,10 +7,10 @@
     "dev": "vite --host=0.0.0.0",
     "build": "vite build",
     "test": "jest --runInBand",
-    "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
+    "lint": "eslint . --ext ts,tsx,js,jsx",
     "preview": "vite preview",
-    "format": "prettier --write \"**/*.jsx\"",
-    "format-check": "prettier --check \"**/*.js\""
+    "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx}\"",
+    "format-check": "prettier --check \"src/**/*.{ts,tsx,js,jsx}\""
   },
   "dependencies": {
     "@fortawesome/fontawesome-free-regular": "^5.0.13",
