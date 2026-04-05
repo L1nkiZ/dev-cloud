@@ -8,9 +8,17 @@ const ITEM = {
     completed: false,
 };
 
-beforeEach(() => {
+beforeEach(async () => {
     if (fs.existsSync(location)) {
         fs.unlinkSync(location);
+    }
+});
+
+afterEach(async () => {
+    try {
+        await db.teardown();
+    } catch (err) {
+        // Ignore errors during teardown
     }
 });
 
