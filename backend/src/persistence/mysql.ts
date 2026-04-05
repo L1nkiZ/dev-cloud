@@ -2,7 +2,14 @@ import 'dotenv/config';
 import fs from 'node:fs';
 import waitPort from 'wait-port';
 import mysql from 'mysql2';
+import type { RowDataPacket } from 'mysql2';
 import type { TodoItem, TodoPersistence } from '../types';
+
+type TodoRow = RowDataPacket & {
+    id: string;
+    name: string;
+    completed: number;
+};
 
 const {
     MYSQL_HOST: HOST,
@@ -65,7 +72,7 @@ async function teardown() {
 
 async function getItems() {
     return new Promise<TodoItem[]>((acc, rej) => {
-        pool.query('SELECT * FROM todo_items', (err, rows: any[]) => {
+        pool.query<TodoRow[]>('SELECT * FROM todo_items', (err, rows) => {
             if (err) return rej(err);
             acc(
                 rows.map((item) =>
@@ -80,16 +87,20 @@ async function getItems() {
 
 async function getItem(id: string | number) {
     return new Promise<TodoItem | undefined>((acc, rej) => {
-        pool.query('SELECT * FROM todo_items WHERE id=?', [id], (err, rows: any[]) => {
-            if (err) return rej(err);
-            acc(
-                rows.map((item) =>
-                    Object.assign({}, item, {
-                        completed: item.completed === 1,
-                    }),
-                )[0],
-            );
-        });
+        pool.query<TodoRow[]>(
+            'SELECT * FROM todo_items WHERE id=?',
+            [id],
+            (err, rows) => {
+                if (err) return rej(err);
+                acc(
+                    rows.map((item) =>
+                        Object.assign({}, item, {
+                            completed: item.completed === 1,
+                        }),
+                    )[0],
+                );
+            },
+        );
     });
 }
 
@@ -106,7 +117,10 @@ async function storeItem(item: TodoItem) {
     });
 }
 
-async function updateItem(id: string | number, item: Pick<TodoItem, 'name' | 'completed'>) {
+async function updateItem(
+    id: string | number,
+    item: Pick<TodoItem, 'name' | 'completed'>,
+) {
     return new Promise<void>((acc, rej) => {
         pool.query(
             'UPDATE todo_items SET name=?, completed=? WHERE id=?',

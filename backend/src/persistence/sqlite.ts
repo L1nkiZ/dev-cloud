@@ -4,6 +4,12 @@ import path from 'node:path';
 import sqlite3 from 'sqlite3';
 import type { TodoItem, TodoPersistence } from '../types';
 
+type TodoRow = {
+    id: string;
+    name: string;
+    completed: number;
+};
+
 const location = process.env.SQLITE_DB_LOCATION || '/etc/todos/todo.db';
 
 let db: sqlite3.Database;
@@ -48,12 +54,12 @@ async function teardown() {
 
 async function getItems() {
     return new Promise<TodoItem[]>((acc, rej) => {
-        db.all('SELECT * FROM todo_items', (err, rows: TodoItem[]) => {
+        db.all('SELECT * FROM todo_items', (err, rows: TodoRow[]) => {
             if (err) return rej(err);
             acc(
                 rows.map((item) =>
                     Object.assign({}, item, {
-                        completed: (item as any).completed === 1,
+                        completed: item.completed === 1,
                     }),
                 ),
             );
@@ -63,16 +69,20 @@ async function getItems() {
 
 async function getItem(id: string | number) {
     return new Promise<TodoItem | undefined>((acc, rej) => {
-        db.all('SELECT * FROM todo_items WHERE id=?', [id], (err, rows: TodoItem[]) => {
-            if (err) return rej(err);
-            acc(
-                rows.map((item) =>
-                    Object.assign({}, item, {
-                        completed: (item as any).completed === 1,
-                    }),
-                )[0],
-            );
-        });
+        db.all(
+            'SELECT * FROM todo_items WHERE id=?',
+            [id],
+            (err, rows: TodoRow[]) => {
+                if (err) return rej(err);
+                acc(
+                    rows.map((item) =>
+                        Object.assign({}, item, {
+                            completed: item.completed === 1,
+                        }),
+                    )[0],
+                );
+            },
+        );
     });
 }
 
@@ -89,7 +99,10 @@ async function storeItem(item: TodoItem) {
     });
 }
 
-async function updateItem(id: string | number, item: Pick<TodoItem, 'name' | 'completed'>) {
+async function updateItem(
+    id: string | number,
+    item: Pick<TodoItem, 'name' | 'completed'>,
+) {
     return new Promise<void>((acc, rej) => {
         db.run(
             'UPDATE todo_items SET name=?, completed=? WHERE id = ?',

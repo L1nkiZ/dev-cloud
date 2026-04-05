@@ -1,7 +1,5 @@
 import type { Request, Response } from 'express';
-import type { TodoPersistence } from '../types';
-
-const db = require('../persistence') as TodoPersistence;
+import db from '../persistence';
 
 const updateItem = async (req: Request, res: Response) => {
     const id = req.params.id as string | number;

@@ -1,14 +1,13 @@
 import 'dotenv/config';
 import express from 'express';
-import type { TodoPersistence } from './types';
+import db from './persistence';
+import getGreeting from './routes/getGreeting';
+import getItems from './routes/getItems';
+import addItem from './routes/addItem';
+import updateItem from './routes/updateItem';
+import deleteItem from './routes/deleteItem';
 
 const app = express();
-const db = require('./persistence') as TodoPersistence;
-const getGreeting = require('./routes/getGreeting');
-const getItems = require('./routes/getItems');
-const addItem = require('./routes/addItem');
-const updateItem = require('./routes/updateItem');
-const deleteItem = require('./routes/deleteItem');
 
 const port = Number(process.env.PORT || 3000);
 

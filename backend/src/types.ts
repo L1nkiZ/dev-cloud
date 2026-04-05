@@ -10,6 +10,9 @@ export type TodoPersistence = {
     getItems: () => Promise<TodoItem[]>;
     getItem: (id: string | number) => Promise<TodoItem | undefined>;
     storeItem: (item: TodoItem) => Promise<void>;
-    updateItem: (id: string | number, item: Pick<TodoItem, 'name' | 'completed'>) => Promise<void>;
+    updateItem: (
+        id: string | number,
+        item: Pick<TodoItem, 'name' | 'completed'>,
+    ) => Promise<void>;
     removeItem: (id: string | number) => Promise<void>;
 };
