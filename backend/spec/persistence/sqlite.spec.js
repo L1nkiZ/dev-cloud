@@ -25,7 +25,7 @@ beforeEach(async () => {
 afterEach(async () => {
     try {
         await db.teardown();
-    } catch (err) {
+    } catch {
         // Ignore errors during teardown
     }
 });
