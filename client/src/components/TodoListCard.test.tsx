@@ -4,19 +4,19 @@ import { TodoListCard } from './TodoListCard';
 
 const API_BASE_URL = process.env.TEST_BACKEND_URL || 'http://127.0.0.1:3000';
 
-let originalFetch;
+let originalFetch: typeof global.fetch | undefined;
 
 jest.setTimeout(20000);
 
 function useRealBackendFetch() {
     originalFetch = global.fetch.bind(global);
-    global.fetch = (input, init) => {
+    global.fetch = ((input, init) => {
         if (typeof input === 'string' && input.startsWith('/')) {
-            return originalFetch(`${API_BASE_URL}${input}`, init);
+            return originalFetch!(`${API_BASE_URL}${input}`, init);
         }
 
-        return originalFetch(input, init);
-    };
+        return originalFetch!(input, init);
+    }) as typeof global.fetch;
 }
 
 function restoreFetch() {
@@ -37,7 +37,7 @@ async function assertBackendIsRunning() {
 
 async function resetItems() {
     const response = await fetch('/api/items');
-    const items = await response.json();
+    const items = (await response.json()) as Array<{ id: string }>;
 
     for (const item of items) {
         await fetch(`/api/items/${item.id}`, { method: 'DELETE' });

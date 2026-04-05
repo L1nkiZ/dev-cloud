@@ -2,8 +2,14 @@ import { useCallback, useEffect, useState } from 'react';
 import { AddItemForm } from './AddNewItemForm';
 import { ItemDisplay } from './ItemDisplay';
 
+interface TodoItem {
+    id: string;
+    name: string;
+    completed: boolean;
+}
+
 export function TodoListCard() {
-    const [items, setItems] = useState(null);
+    const [items, setItems] = useState<TodoItem[] | null>(null);
     const [error, setError] = useState('');
 
     useEffect(() => {
@@ -17,21 +23,24 @@ export function TodoListCard() {
             })
             .then(setItems)
             .catch(() => {
-                setError('Backend indisponible. Verifie que le serveur tourne.');
+                setError(
+                    'Backend indisponible. Verifie que le serveur tourne.',
+                );
                 setItems([]);
             });
     }, []);
 
     const onNewItem = useCallback(
-        (newItem) => {
-            setItems([...items, newItem]);
+        (newItem: TodoItem) => {
+            setItems([...(items || []), newItem]);
         },
         [items],
     );
 
     const onItemUpdate = useCallback(
-        (item) => {
-            const index = items.findIndex((i) => i.id === item.id);
+        (item: TodoItem) => {
+            const index = items?.findIndex((i) => i.id === item.id) ?? -1;
+            if (index === -1 || !items) return;
             setItems([
                 ...items.slice(0, index),
                 item,
@@ -42,14 +51,15 @@ export function TodoListCard() {
     );
 
     const onItemRemoval = useCallback(
-        (item) => {
-            const index = items.findIndex((i) => i.id === item.id);
+        (item: TodoItem) => {
+            const index = items?.findIndex((i) => i.id === item.id) ?? -1;
+            if (index === -1 || !items) return;
             setItems([...items.slice(0, index), ...items.slice(index + 1)]);
         },
         [items],
     );
 
-    if (items === null) return 'Loading...';
+    if (items === null) return <div>Loading...</div>;
 
     return (
         <>
