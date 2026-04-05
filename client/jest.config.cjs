@@ -1,13 +1,20 @@
 module.exports = {
     testEnvironment: 'jsdom',
-    setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
-    testPathIgnorePatterns: ['.tsx$'],
+    setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
     moduleNameMapper: {
         '\\.(css|scss)$': '<rootDir>/test/styleMock.cjs',
     },
     moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
     transform: {
-        '^.+\\.[jt]sx?$': [
+        '^.+\\.tsx?$': [
+            'ts-jest',
+            {
+                tsconfig: {
+                    jsx: 'react-jsx',
+                },
+            },
+        ],
+        '^.+\\.jsx?$': [
             'babel-jest',
             {
                 presets: [
