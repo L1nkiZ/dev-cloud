@@ -74,8 +74,10 @@ npm test -- --watch
 #### Générer un rapport de couverture
 ```bash
 cd backend
-npm test -- --coverage
+npm run test:coverage
 ```
+
+Les test coverage génére un rapport dans le dossier `backend/coverage/` ou `client/coverage/`. Ce rapport contient un fichier texte et un rapport html
 
 ## Développement local
 

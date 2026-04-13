@@ -7,6 +7,7 @@
     "dev": "vite --host=0.0.0.0",
     "build": "tsc --noEmit && vite build",
     "test": "jest --runInBand",
+    "test:coverage": "jest --runInBand --coverage",
     "lint": "eslint . --ext ts,tsx",
     "preview": "vite preview",
     "format": "prettier --write \"src/**/*.{ts,tsx}\"",
