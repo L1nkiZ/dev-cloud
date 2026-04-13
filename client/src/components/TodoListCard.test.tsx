@@ -57,7 +57,13 @@ beforeEach(async () => {
     await resetItems();
 });
 
-test('can add an item, mark it complete, and delete it', async () => {
+async function addItemThroughUI(name: string, user: ReturnType<typeof userEvent.setup>) {
+    await user.type(screen.getByPlaceholderText('New Item'), name);
+    await user.click(screen.getByRole('button', { name: 'Add Item' }));
+    expect(await screen.findByText(name)).toBeInTheDocument();
+}
+
+test('can create an item', async () => {
     const user = userEvent.setup();
 
     render(<TodoListCard />);
@@ -66,10 +72,18 @@ test('can add an item, mark it complete, and delete it', async () => {
         await screen.findByText('No items yet! Add one above!'),
     ).toBeInTheDocument();
 
-    await user.type(screen.getByPlaceholderText('New Item'), 'Buy milk');
-    await user.click(screen.getByRole('button', { name: 'Add Item' }));
+    await addItemThroughUI('Buy milk', user);
 
-    expect(await screen.findByText('Buy milk')).toBeInTheDocument();
+    expect(screen.getByText('Buy milk')).toBeInTheDocument();
+});
+
+test('can mark an item as complete', async () => {
+    const user = userEvent.setup();
+
+    render(<TodoListCard />);
+
+    await screen.findByText('No items yet! Add one above!');
+    await addItemThroughUI('Take out trash', user);
 
     await user.click(
         screen.getByRole('button', { name: 'Mark item as complete' }),
@@ -78,6 +92,37 @@ test('can add an item, mark it complete, and delete it', async () => {
     expect(
         await screen.findByRole('button', { name: 'Mark item as incomplete' }),
     ).toBeInTheDocument();
+});
+
+test('can uncheck a completed item', async () => {
+    const user = userEvent.setup();
+
+    render(<TodoListCard />);
+
+    await screen.findByText('No items yet! Add one above!');
+    await addItemThroughUI('Read docs', user);
+
+    await user.click(
+        screen.getByRole('button', { name: 'Mark item as complete' }),
+    );
+
+    const markIncompleteButton = await screen.findByRole('button', {
+        name: 'Mark item as incomplete',
+    });
+    await user.click(markIncompleteButton);
+
+    expect(
+        await screen.findByRole('button', { name: 'Mark item as complete' }),
+    ).toBeInTheDocument();
+});
+
+test('can delete an item', async () => {
+    const user = userEvent.setup();
+
+    render(<TodoListCard />);
+
+    await screen.findByText('No items yet! Add one above!');
+    await addItemThroughUI('Old task', user);
 
     await user.click(screen.getByRole('button', { name: 'Remove Item' }));
 
