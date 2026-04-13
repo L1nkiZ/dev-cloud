@@ -9,6 +9,7 @@
     "format": "prettier --write \"src/**/*.{js,ts}\" \"spec/**/*.{js,ts}\" \"eslint.config.cjs\"",
     "format-check": "prettier --check \"src/**/*.{js,ts}\" \"spec/**/*.{js,ts}\" \"eslint.config.cjs\"",
     "test": "jest --runInBand",
+    "test:coverage": "jest --runInBand --coverage",
     "dev": "nodemon --watch src --ext ts --exec ts-node src/index.ts",
     "start": "node dist/index.js"
   },
