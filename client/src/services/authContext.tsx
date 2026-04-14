@@ -1,5 +1,5 @@
 import { createContext, useState, useEffect, ReactNode } from 'react';
-import { getCurrentUser, logout as logoutApi } from './authService';
+import { getCurrentUser, logout as logoutApi } from './authService.js';
 
 export interface AuthUser {
     id: string;

@@ -32,7 +32,7 @@ export interface ResetPasswordRequest {
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 // Helper function to safely parse JSON responses
-async function parseResponse(response: Response): Promise<Record<string, unknown>> {
+async function parseResponse<T>(response: Response): Promise<T> {
     const contentType = response.headers.get('content-type');
     
     if (!contentType || !contentType.includes('application/json')) {
@@ -41,7 +41,7 @@ async function parseResponse(response: Response): Promise<Record<string, unknown
         throw new Error(`Server error (${response.status}): ${text.substring(0, 100)}`);
     }
     
-    return response.json();
+    return response.json() as Promise<T>;
 }
 
 // Sign up
@@ -57,7 +57,7 @@ export async function signUp(credentials: SignUpCredentials): Promise<AuthRespon
 
     if (!response.ok) {
         try {
-            const error = await parseResponse(response);
+            const error = await parseResponse<{ error: string }>(response);
             throw new Error(error.error || 'Sign up failed');
         } catch (err) {
             if (err instanceof Error && err.message.includes('Server error')) {
@@ -67,7 +67,7 @@ export async function signUp(credentials: SignUpCredentials): Promise<AuthRespon
         }
     }
 
-    return parseResponse(response);
+    return parseResponse<AuthResponse>(response);
 }
 
 // Sign in
@@ -83,7 +83,7 @@ export async function signIn(credentials: SignInCredentials): Promise<AuthRespon
 
     if (!response.ok) {
         try {
-            const error = await parseResponse(response);
+            const error = await parseResponse<{ error: string }>(response);
             throw new Error(error.error || 'Sign in failed');
         } catch (err) {
             if (err instanceof Error && err.message.includes('Server error')) {
@@ -93,7 +93,7 @@ export async function signIn(credentials: SignInCredentials): Promise<AuthRespon
         }
     }
 
-    return parseResponse(response);
+    return parseResponse<AuthResponse>(response);
 }
 
 // Forgot password
@@ -108,7 +108,7 @@ export async function forgotPassword(request: ForgotPasswordRequest): Promise<{ 
 
     if (!response.ok) {
         try {
-            const error = await parseResponse(response);
+            const error = await parseResponse<{ error: string }>(response);
             throw new Error(error.error || 'Forgot password request failed');
         } catch (err) {
             if (err instanceof Error && err.message.includes('Server error')) {
@@ -118,7 +118,7 @@ export async function forgotPassword(request: ForgotPasswordRequest): Promise<{ 
         }
     }
 
-    return parseResponse(response);
+    return parseResponse<{ message: string }>(response);
 }
 
 // Reset password
@@ -133,7 +133,7 @@ export async function resetPassword(request: ResetPasswordRequest): Promise<{ me
 
     if (!response.ok) {
         try {
-            const error = await parseResponse(response);
+            const error = await parseResponse<{ error: string }>(response);
             throw new Error(error.error || 'Password reset failed');
         } catch (err) {
             if (err instanceof Error && err.message.includes('Server error')) {
@@ -143,7 +143,7 @@ export async function resetPassword(request: ResetPasswordRequest): Promise<{ me
         }
     }
 
-    return parseResponse(response);
+    return parseResponse<{ message: string }>(response);
 }
 
 // Logout
@@ -158,7 +158,7 @@ export async function logout(): Promise<{ message: string }> {
 
     if (!response.ok) {
         try {
-            const error = await parseResponse(response);
+            const error = await parseResponse<{ error: string }>(response);
             throw new Error(error.error || 'Logout failed');
         } catch (err) {
             if (err instanceof Error && err.message.includes('Server error')) {
@@ -168,7 +168,7 @@ export async function logout(): Promise<{ message: string }> {
         }
     }
 
-    return parseResponse(response);
+    return parseResponse<{ message: string }>(response);
 }
 
 // Get current user
@@ -183,7 +183,7 @@ export async function getCurrentUser(): Promise<{ user: User }> {
 
     if (!response.ok) {
         try {
-            const error = await parseResponse(response);
+            const error = await parseResponse<{ error: string }>(response);
             throw new Error(error.error || 'Failed to get current user');
         } catch (err) {
             if (err instanceof Error && err.message.includes('Server error')) {
@@ -193,5 +193,5 @@ export async function getCurrentUser(): Promise<{ user: User }> {
         }
     }
 
-    return parseResponse(response);
+    return parseResponse<{ user: User }>(response);
 }

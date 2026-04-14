@@ -5,7 +5,7 @@ import Row from 'react-bootstrap/Row';
 import Button from 'react-bootstrap/Button';
 import { TodoListCard } from './TodoListCard';
 import { Greeting } from './Greeting';
-import { useAuth } from '../services/useAuth';
+import { useAuth } from '../services/useAuth.js';
 
 export default function HomePage() {
     const { logout } = useAuth();

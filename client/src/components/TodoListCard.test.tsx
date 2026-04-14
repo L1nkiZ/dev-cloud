@@ -33,7 +33,7 @@ function useRealBackendFetch() {
                 headers,
             });
 
-            const rawHeaders = (response.headers as Record<string, unknown>).raw?.();
+            const rawHeaders = (response.headers as unknown as Record<string, string[]>).raw?.();
             const setCookie =
                 rawHeaders?.['set-cookie']?.[0] || response.headers.get('set-cookie');
             if (setCookie) {

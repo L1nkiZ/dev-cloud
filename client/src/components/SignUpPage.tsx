@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { signUp } from '../services/authService';
-import { useAuth } from '../services/useAuth';
+import { useAuth } from '../services/useAuth.js';
 import './AuthPages.scss';
 
 export default function SignUpPage() {
