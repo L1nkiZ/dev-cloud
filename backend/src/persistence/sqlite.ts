@@ -2,15 +2,37 @@ import 'dotenv/config';
 import fs from 'node:fs';
 import path from 'node:path';
 import sqlite3 from 'sqlite3';
-import type { TodoItem, TodoPersistence } from '../types';
+import { v4 as uuid } from 'uuid';
+import type { TodoItem, TodoPersistence, User, PasswordResetToken, AuthPersistence } from '../types.js';
 
 type TodoRow = {
     id: string;
     name: string;
     completed: number;
+    userId: string;
 };
 
-const location = process.env.SQLITE_DB_LOCATION || '/etc/todos/todo.db';
+type UserRow = {
+    id: string;
+    email: string;
+    username: string;
+    hashedPassword: string;
+    createdAt: number;
+};
+
+type ResetTokenRow = {
+    id: string;
+    userId: string;
+    token: string;
+    expiresAt: number;
+    createdAt: number;
+};
+
+const location =
+    process.env.SQLITE_DB_LOCATION ||
+    (process.env.NODE_ENV === 'test'
+        ? path.join(process.cwd(), 'tmp', 'todo.db')
+        : path.join(process.cwd(), 'data', 'todo.db'));
 
 let db: sqlite3.Database;
 
@@ -28,11 +50,87 @@ function init() {
                 console.log(`Using sqlite database at ${location}`);
             }
 
+            // Create users table first so foreign keys can reference it
             db.run(
-                'CREATE TABLE IF NOT EXISTS todo_items (id varchar(36), name varchar(255), completed boolean)',
-                (runErr) => {
-                    if (runErr) return rej(runErr);
-                    acc();
+                'CREATE TABLE IF NOT EXISTS users (id varchar(36) PRIMARY KEY, email varchar(255) NOT NULL UNIQUE, username varchar(255) NOT NULL UNIQUE, hashedPassword varchar(255) NOT NULL, createdAt integer NOT NULL)',
+                (userErr) => {
+                    if (userErr) return rej(userErr);
+
+                    db.all("PRAGMA table_info('users')", (infoErr, rows: any[]) => {
+                        if (infoErr) return rej(infoErr);
+
+                        const hasUsername = rows.some((row) => row.name === 'username');
+                        const ensureUsernameColumn = hasUsername
+                            ? Promise.resolve()
+                            : new Promise<void>((resolve, reject) => {
+                                  db.run(
+                                      'ALTER TABLE users ADD COLUMN username varchar(255) NOT NULL DEFAULT ""',
+                                      (alterErr) => {
+                                          if (alterErr) return reject(alterErr);
+                                          db.run(
+                                              'UPDATE users SET username = email WHERE username = ""',
+                                              (updateErr) => {
+                                                  if (updateErr) return reject(updateErr);
+                                                  db.run(
+                                                      'CREATE UNIQUE INDEX IF NOT EXISTS idx_users_username ON users(username)',
+                                                      (indexErr) => {
+                                                          if (indexErr) return reject(indexErr);
+                                                          resolve();
+                                                      },
+                                                  );
+                                              },
+                                          );
+                                      },
+                                  );
+                              });
+
+                        ensureUsernameColumn
+                            .then(() => {
+                                db.all("SELECT name FROM sqlite_master WHERE type='table' AND name='todo_items'", (todoTableErr, todoTableRows: any[]) => {
+                                    if (todoTableErr) return rej(todoTableErr);
+
+                                    const ensureTodoSchema = todoTableRows.length
+                                        ? new Promise<void>((resolve, reject) => {
+                                              db.all("PRAGMA table_info('todo_items')", (infoErr, cols: any[]) => {
+                                                  if (infoErr) return reject(infoErr);
+
+                                                  const hasUserId = cols.some((col) => col.name === 'userId');
+                                                  if (hasUserId) {
+                                                      return resolve();
+                                                  }
+
+                                                  db.run('ALTER TABLE todo_items ADD COLUMN userId varchar(36)', (alterErr) => {
+                                                      if (alterErr) return reject(alterErr);
+                                                      resolve();
+                                                  });
+                                              });
+                                          })
+                                        : new Promise<void>((resolve, reject) => {
+                                              db.run(
+                                                  'CREATE TABLE IF NOT EXISTS todo_items (id varchar(36) PRIMARY KEY, name varchar(255), completed boolean, userId varchar(36), FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE)',
+                                                  (runErr) => {
+                                                      if (runErr) return reject(runErr);
+                                                      resolve();
+                                                  },
+                                              );
+                                          });
+
+                                    ensureTodoSchema
+                                        .then(() => {
+                                            // Create password_reset_tokens table
+                                            db.run(
+                                                'CREATE TABLE IF NOT EXISTS password_reset_tokens (id varchar(36) PRIMARY KEY, userId varchar(36) NOT NULL, token varchar(255) NOT NULL UNIQUE, expiresAt integer NOT NULL, createdAt integer NOT NULL, FOREIGN KEY (userId) REFERENCES users(id))',
+                                                (tokenErr) => {
+                                                    if (tokenErr) return rej(tokenErr);
+                                                    acc();
+                                                },
+                                            );
+                                        })
+                                        .catch(rej);
+                                });
+                            })
+                            .catch(rej);
+                    });
                 },
             );
         });
@@ -52,9 +150,10 @@ async function teardown() {
     });
 }
 
-async function getItems() {
+// TODO persistence methods
+async function getItems(userId: string) {
     return new Promise<TodoItem[]>((acc, rej) => {
-        db.all('SELECT * FROM todo_items', (err, rows: TodoRow[]) => {
+        db.all('SELECT * FROM todo_items WHERE userId=?', [userId], (err, rows: TodoRow[]) => {
             if (err) return rej(err);
             acc(
                 rows.map((item) =>
@@ -67,11 +166,11 @@ async function getItems() {
     });
 }
 
-async function getItem(id: string | number) {
+async function getItem(id: string | number, userId: string) {
     return new Promise<TodoItem | undefined>((acc, rej) => {
         db.all(
-            'SELECT * FROM todo_items WHERE id=?',
-            [id],
+            'SELECT * FROM todo_items WHERE id=? AND userId=?',
+            [id, userId],
             (err, rows: TodoRow[]) => {
                 if (err) return rej(err);
                 acc(
@@ -89,8 +188,8 @@ async function getItem(id: string | number) {
 async function storeItem(item: TodoItem) {
     return new Promise<void>((acc, rej) => {
         db.run(
-            'INSERT INTO todo_items (id, name, completed) VALUES (?, ?, ?)',
-            [item.id, item.name, item.completed ? 1 : 0],
+            'INSERT INTO todo_items (id, name, completed, userId) VALUES (?, ?, ?, ?)',
+            [item.id, item.name, item.completed ? 1 : 0, item.userId],
             (err) => {
                 if (err) return rej(err);
                 acc();
@@ -102,11 +201,12 @@ async function storeItem(item: TodoItem) {
 async function updateItem(
     id: string | number,
     item: Pick<TodoItem, 'name' | 'completed'>,
+    userId: string,
 ) {
     return new Promise<void>((acc, rej) => {
         db.run(
-            'UPDATE todo_items SET name=?, completed=? WHERE id = ?',
-            [item.name, item.completed ? 1 : 0, id],
+            'UPDATE todo_items SET name=?, completed=? WHERE id = ? AND userId = ?',
+            [item.name, item.completed ? 1 : 0, id, userId],
             (err) => {
                 if (err) return rej(err);
                 acc();
@@ -115,16 +215,111 @@ async function updateItem(
     });
 }
 
-async function removeItem(id: string | number) {
+async function removeItem(id: string | number, userId: string) {
     return new Promise<void>((acc, rej) => {
-        db.run('DELETE FROM todo_items WHERE id = ?', [id], (err) => {
+        db.run('DELETE FROM todo_items WHERE id = ? AND userId = ?', [id, userId], (err) => {
             if (err) return rej(err);
             acc();
         });
     });
 }
 
-const sqlitePersistence: TodoPersistence = {
+// Auth persistence methods
+async function getUserByEmail(email: string) {
+    return new Promise<User | undefined>((acc, rej) => {
+        db.get('SELECT * FROM users WHERE email = ?', [email], (err, row: UserRow) => {
+            if (err) return rej(err);
+            acc(row ? (row as User) : undefined);
+        });
+    });
+}
+
+async function getUserById(id: string) {
+    return new Promise<User | undefined>((acc, rej) => {
+        db.get('SELECT * FROM users WHERE id = ?', [id], (err, row: UserRow) => {
+            if (err) return rej(err);
+            acc(row ? (row as User) : undefined);
+        });
+    });
+}
+
+async function createUser(email: string, hashedPassword: string, username: string) {
+    const userId = uuid();
+    return new Promise<User>((acc, rej) => {
+        db.run(
+            'INSERT INTO users (id, email, username, hashedPassword, createdAt) VALUES (?, ?, ?, ?, ?)',
+            [userId, email, username, hashedPassword, Date.now()],
+            function (err) {
+                if (err) return rej(err);
+                acc({
+                    id: userId,
+                    email,
+                    username,
+                    hashedPassword,
+                    createdAt: Date.now(),
+                });
+            },
+        );
+    });
+}
+
+async function updatePassword(userId: string, hashedPassword: string) {
+    return new Promise<void>((acc, rej) => {
+        db.run(
+            'UPDATE users SET hashedPassword = ? WHERE id = ?',
+            [hashedPassword, userId],
+            (err) => {
+                if (err) return rej(err);
+                acc();
+            },
+        );
+    });
+}
+
+async function createPasswordResetToken(userId: string, token: string, expiresAt: number) {
+    const tokenId = uuid();
+    return new Promise<PasswordResetToken>((acc, rej) => {
+        db.run(
+            'INSERT INTO password_reset_tokens (id, userId, token, expiresAt, createdAt) VALUES (?, ?, ?, ?, ?)',
+            [tokenId, userId, token, expiresAt, Date.now()],
+            function (err) {
+                if (err) return rej(err);
+                acc({
+                    id: tokenId,
+                    userId,
+                    token,
+                    expiresAt,
+                    createdAt: Date.now(),
+                });
+            },
+        );
+    });
+}
+
+async function getPasswordResetToken(token: string) {
+    return new Promise<PasswordResetToken | undefined>((acc, rej) => {
+        db.get(
+            'SELECT * FROM password_reset_tokens WHERE token = ?',
+            [token],
+            (err, row: ResetTokenRow) => {
+                if (err) return rej(err);
+                acc(row ? (row as PasswordResetToken) : undefined);
+            },
+        );
+    });
+}
+
+async function deletePasswordResetToken(id: string) {
+    return new Promise<void>((acc, rej) => {
+        db.run('DELETE FROM password_reset_tokens WHERE id = ?', [id], (err) => {
+            if (err) return rej(err);
+            acc();
+        });
+    });
+}
+
+const sqlitePersistence: TodoPersistence & AuthPersistence = {
+    // Todo methods
     init,
     teardown,
     getItems,
@@ -132,6 +327,15 @@ const sqlitePersistence: TodoPersistence = {
     storeItem,
     updateItem,
     removeItem,
+    // Auth methods
+    getUserByEmail,
+    getUserById,
+    createUser,
+    updatePassword,
+    createPasswordResetToken,
+    getPasswordResetToken,
+    deletePasswordResetToken,
 };
 
-export = sqlitePersistence;
+export default sqlitePersistence;
+

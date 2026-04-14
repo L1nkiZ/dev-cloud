@@ -24,18 +24,21 @@ interface ItemDisplayProps {
   onItemRemoval: (item: TodoItem) => void
 }
 
+const API_URL = process.env.VITE_API_URL || '/api'
+
 export function ItemDisplay({ item, onItemUpdate, onItemRemoval }: ItemDisplayProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [editedName, setEditedName] = useState(item.name)
 
   const toggleCompletion = () => {
-    fetch(`/api/items/${item.id}`, {
+    fetch(`${API_URL}/items/${item.id}`, {
       method: 'PUT',
       body: JSON.stringify({
         name: item.name,
         completed: !item.completed,
       }),
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
     })
       .then((r) => r.json())
       .then(onItemUpdate)
@@ -70,7 +73,10 @@ export function ItemDisplay({ item, onItemUpdate, onItemRemoval }: ItemDisplayPr
   }
 
   const removeItem = () => {
-    fetch(`/api/items/${item.id}`, { method: 'DELETE' }).then(() => onItemRemoval(item))
+    fetch(`${API_URL}/items/${item.id}`, {
+      method: 'DELETE',
+      credentials: 'include',
+    }).then(() => onItemRemoval(item))
   }
 
   return (

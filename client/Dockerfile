@@ -6,7 +6,7 @@ WORKDIR /usr/local/app
 FROM base AS client-base
 COPY package.json package-lock.json ./
 RUN npm install
-COPY .eslintrc.cjs index.html vite.config.js ./
+COPY .eslintrc.cjs index.html vite.config.ts ./
 COPY public ./public
 COPY src ./src
 
