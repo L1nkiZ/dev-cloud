@@ -1,5 +1,5 @@
 import type { Request, Response } from 'express';
-import db from '../persistence';
+import db from '../persistence/index';
 
 const getItems = async (req: Request, res: Response) => {
     const items = await db.getItems();

@@ -1,5 +1,5 @@
 import type { Request, Response } from 'express';
-import db from '../persistence';
+import db from '../persistence/index';
 
 const updateItem = async (req: Request, res: Response) => {
     const id = req.params.id as string | number;

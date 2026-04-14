@@ -1,5 +1,5 @@
 import type { Request, Response } from 'express';
-import db from '../persistence';
+import db from '../persistence/index';
 
 const deleteItem = async (req: Request, res: Response) => {
     await db.removeItem(req.params.id as string | number);

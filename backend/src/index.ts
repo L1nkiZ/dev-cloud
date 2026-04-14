@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import express from 'express';
-import db from './persistence';
+import db from './persistence/index';
 import getGreeting from './routes/getGreeting';
 import getItems from './routes/getItems';
 import addItem from './routes/addItem';

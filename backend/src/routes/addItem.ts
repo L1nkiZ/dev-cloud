@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express';
 import { v4 as uuid } from 'uuid';
-import db from '../persistence';
+import db from '../persistence/index';
 
 const addItem = async (req: Request, res: Response) => {
     const item = {
