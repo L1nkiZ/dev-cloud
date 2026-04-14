@@ -9,6 +9,7 @@ type TodoRow = {
     id: string;
     name: string;
     completed: number;
+    userId: string;
 };
 
 type UserRow = {
@@ -51,7 +52,7 @@ function init() {
 
             // Create todo_items table
             db.run(
-                'CREATE TABLE IF NOT EXISTS todo_items (id varchar(36), name varchar(255), completed boolean)',
+                'CREATE TABLE IF NOT EXISTS todo_items (id varchar(36) PRIMARY KEY, name varchar(255), completed boolean, userId varchar(36), FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE)',
                 (runErr) => {
                     if (runErr) return rej(runErr);
 
@@ -91,9 +92,9 @@ async function teardown() {
 }
 
 // TODO persistence methods
-async function getItems() {
+async function getItems(userId: string) {
     return new Promise<TodoItem[]>((acc, rej) => {
-        db.all('SELECT * FROM todo_items', (err, rows: TodoRow[]) => {
+        db.all('SELECT * FROM todo_items WHERE userId=?', [userId], (err, rows: TodoRow[]) => {
             if (err) return rej(err);
             acc(
                 rows.map((item) =>
@@ -106,11 +107,11 @@ async function getItems() {
     });
 }
 
-async function getItem(id: string | number) {
+async function getItem(id: string | number, userId: string) {
     return new Promise<TodoItem | undefined>((acc, rej) => {
         db.all(
-            'SELECT * FROM todo_items WHERE id=?',
-            [id],
+            'SELECT * FROM todo_items WHERE id=? AND userId=?',
+            [id, userId],
             (err, rows: TodoRow[]) => {
                 if (err) return rej(err);
                 acc(
@@ -128,8 +129,8 @@ async function getItem(id: string | number) {
 async function storeItem(item: TodoItem) {
     return new Promise<void>((acc, rej) => {
         db.run(
-            'INSERT INTO todo_items (id, name, completed) VALUES (?, ?, ?)',
-            [item.id, item.name, item.completed ? 1 : 0],
+            'INSERT INTO todo_items (id, name, completed, userId) VALUES (?, ?, ?, ?)',
+            [item.id, item.name, item.completed ? 1 : 0, item.userId],
             (err) => {
                 if (err) return rej(err);
                 acc();
@@ -141,11 +142,12 @@ async function storeItem(item: TodoItem) {
 async function updateItem(
     id: string | number,
     item: Pick<TodoItem, 'name' | 'completed'>,
+    userId: string,
 ) {
     return new Promise<void>((acc, rej) => {
         db.run(
-            'UPDATE todo_items SET name=?, completed=? WHERE id = ?',
-            [item.name, item.completed ? 1 : 0, id],
+            'UPDATE todo_items SET name=?, completed=? WHERE id = ? AND userId = ?',
+            [item.name, item.completed ? 1 : 0, id, userId],
             (err) => {
                 if (err) return rej(err);
                 acc();
@@ -154,9 +156,9 @@ async function updateItem(
     });
 }
 
-async function removeItem(id: string | number) {
+async function removeItem(id: string | number, userId: string) {
     return new Promise<void>((acc, rej) => {
-        db.run('DELETE FROM todo_items WHERE id = ?', [id], (err) => {
+        db.run('DELETE FROM todo_items WHERE id = ? AND userId = ?', [id, userId], (err) => {
             if (err) return rej(err);
             acc();
         });

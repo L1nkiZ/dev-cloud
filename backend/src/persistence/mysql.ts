@@ -10,6 +10,7 @@ type TodoRow = RowDataPacket & {
     id: string;
     name: string;
     completed: number;
+    userId: string;
 };
 
 type UserRow = RowDataPacket & {
@@ -78,9 +79,16 @@ async function init() {
         charset: 'utf8mb4',
     });
 
-    // Create todo_items table
+    // Drop and recreate todo_items table with userId
+    try {
+        await query('DROP TABLE IF EXISTS todo_items');
+    } catch (dropErr: any) {
+        console.error('[MySQL] Warning: Could not drop todo_items (may not exist):', dropErr.message);
+    }
+
+    // Create todo_items table with userId
     await query(
-        'CREATE TABLE IF NOT EXISTS todo_items (id varchar(36), name varchar(255), completed boolean) DEFAULT CHARSET utf8mb4'
+        'CREATE TABLE todo_items (id varchar(36) PRIMARY KEY, name varchar(255), completed boolean, userId varchar(36), FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE) DEFAULT CHARSET utf8mb4'
     );
     console.log(`[MySQL] todo_items table ready`);
 
@@ -121,9 +129,9 @@ async function teardown() {
 }
 
 // TODO persistence methods
-async function getItems() {
+async function getItems(userId: string) {
     return new Promise<TodoItem[]>((acc, rej) => {
-        pool.query<TodoRow[]>('SELECT * FROM todo_items', (err, rows) => {
+        pool.query<TodoRow[]>('SELECT * FROM todo_items WHERE userId=?', [userId], (err, rows) => {
             if (err) return rej(err);
             acc(
                 rows.map((item) =>
@@ -136,11 +144,11 @@ async function getItems() {
     });
 }
 
-async function getItem(id: string | number) {
+async function getItem(id: string | number, userId: string) {
     return new Promise<TodoItem | undefined>((acc, rej) => {
         pool.query<TodoRow[]>(
-            'SELECT * FROM todo_items WHERE id=?',
-            [id],
+            'SELECT * FROM todo_items WHERE id=? AND userId=?',
+            [id, userId],
             (err, rows) => {
                 if (err) return rej(err);
                 acc(
@@ -158,8 +166,8 @@ async function getItem(id: string | number) {
 async function storeItem(item: TodoItem) {
     return new Promise<void>((acc, rej) => {
         pool.query(
-            'INSERT INTO todo_items (id, name, completed) VALUES (?, ?, ?)',
-            [item.id, item.name, item.completed ? 1 : 0],
+            'INSERT INTO todo_items (id, name, completed, userId) VALUES (?, ?, ?, ?)',
+            [item.id, item.name, item.completed ? 1 : 0, item.userId],
             (err) => {
                 if (err) return rej(err);
                 acc();
@@ -171,11 +179,12 @@ async function storeItem(item: TodoItem) {
 async function updateItem(
     id: string | number,
     item: Pick<TodoItem, 'name' | 'completed'>,
+    userId: string,
 ) {
     return new Promise<void>((acc, rej) => {
         pool.query(
-            'UPDATE todo_items SET name=?, completed=? WHERE id=?',
-            [item.name, item.completed ? 1 : 0, id],
+            'UPDATE todo_items SET name=?, completed=? WHERE id=? AND userId=?',
+            [item.name, item.completed ? 1 : 0, id, userId],
             (err) => {
                 if (err) return rej(err);
                 acc();
@@ -184,9 +193,9 @@ async function updateItem(
     });
 }
 
-async function removeItem(id: string | number) {
+async function removeItem(id: string | number, userId: string) {
     return new Promise<void>((acc, rej) => {
-        pool.query('DELETE FROM todo_items WHERE id = ?', [id], (err) => {
+        pool.query('DELETE FROM todo_items WHERE id=? AND userId=?', [id, userId], (err) => {
             if (err) return rej(err);
             acc();
         });

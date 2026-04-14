@@ -2,6 +2,7 @@ export type TodoItem = {
     id: string;
     name: string;
     completed: boolean;
+    userId: string;
 };
 
 export type User = {
@@ -25,14 +26,15 @@ export type PasswordResetToken = {
 export type TodoPersistence = {
     init: () => Promise<void>;
     teardown: () => Promise<void>;
-    getItems: () => Promise<TodoItem[]>;
-    getItem: (id: string | number) => Promise<TodoItem | undefined>;
+    getItems: (userId: string) => Promise<TodoItem[]>;
+    getItem: (id: string | number, userId: string) => Promise<TodoItem | undefined>;
     storeItem: (item: TodoItem) => Promise<void>;
     updateItem: (
         id: string | number,
         item: Pick<TodoItem, 'name' | 'completed'>,
+        userId: string,
     ) => Promise<void>;
-    removeItem: (id: string | number) => Promise<void>;
+    removeItem: (id: string | number, userId: string) => Promise<void>;
 };
 
 export type AuthPersistence = {
