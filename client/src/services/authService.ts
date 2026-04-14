@@ -32,7 +32,7 @@ export interface ResetPasswordRequest {
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 // Helper function to safely parse JSON responses
-async function parseResponse<T>(response: Response): Promise<T> {
+async function parseResponse(response: Response): Promise<any> {
     const contentType = response.headers.get('content-type');
     
     if (!contentType || !contentType.includes('application/json')) {
