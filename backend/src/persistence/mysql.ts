@@ -86,11 +86,12 @@ async function init() {
         console.error('[MySQL] Warning: Could not drop todo_items (may not exist):', dropErr.message);
     }
 
-    // Create todo_items table with userId
-    await query(
-        'CREATE TABLE todo_items (id varchar(36) PRIMARY KEY, name varchar(255), completed boolean, userId varchar(36), FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE) DEFAULT CHARSET utf8mb4'
-    );
-    console.log(`[MySQL] todo_items table ready`);
+    // Drop password_reset_tokens if exists
+    try {
+        await query('DROP TABLE IF EXISTS password_reset_tokens');
+    } catch (dropErr: any) {
+        console.error('[MySQL] Warning: Could not drop password_reset_tokens (may not exist):', dropErr.message);
+    }
 
     // Create users table
     await query(
@@ -109,6 +110,12 @@ async function init() {
     }
 
     console.log('[MySQL] users table schema checked');
+
+    // Create todo_items table with userId
+    await query(
+        'CREATE TABLE todo_items (id varchar(36) PRIMARY KEY, name varchar(255), completed boolean, userId varchar(36), FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE) DEFAULT CHARSET utf8mb4'
+    );
+    console.log(`[MySQL] todo_items table ready`);
 
     // Create password_reset_tokens table
     await query(
