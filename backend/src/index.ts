@@ -9,7 +9,9 @@ import getItems from './routes/getItems.js';
 import addItem from './routes/addItem.js';
 import updateItem from './routes/updateItem.js';
 import deleteItem from './routes/deleteItem.js';
+import health from './routes/health.js';
 import { signUp, signIn, forgotPassword, resetPassword, logout, getCurrentUser } from './routes/auth.js';
+import { hashPassword } from './auth.js';
 
 const app = express();
 
@@ -23,7 +25,8 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(express.static('src/static'));
 
-// Auth routes (public)
+// Public routes
+app.get('/api/health', health);
 app.post('/api/auth/sign-up', signUp);
 app.post('/api/auth/sign-in', signIn);
 app.post('/api/auth/forgot-password', forgotPassword);
@@ -38,8 +41,31 @@ app.post('/api/items', authMiddleware, addItem);
 app.put('/api/items/:id', authMiddleware, updateItem);
 app.delete('/api/items/:id', authMiddleware, deleteItem);
 
+async function seedTestUser() {
+    if (process.env.NODE_ENV === 'production') {
+        return;
+    }
+
+    const email = process.env.TEST_USER_EMAIL || 'user@example.com';
+    const password = process.env.TEST_USER_PASSWORD || 'password';
+    const username = process.env.TEST_USER_USERNAME || 'default user';
+
+    const existingUser = await db.getUserByEmail(email);
+    const hashedPassword = await hashPassword(password);
+
+    if (existingUser) {
+        await db.updatePassword(existingUser.id, hashedPassword);
+        console.log(`[Test user] Updated password for existing frontend test user: ${email}`);
+        return;
+    }
+
+    await db.createUser(email, hashedPassword, username);
+    console.log(`[Test user] Created frontend test user: ${email}`);
+}
+
 db.init()
-    .then(() => {
+    .then(async () => {
+        await seedTestUser();
         app.listen(port, '0.0.0.0', () => console.log(`Listening on port ${port}`));
     })
     .catch((err: unknown) => {

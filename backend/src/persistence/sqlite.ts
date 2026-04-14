@@ -50,28 +50,87 @@ function init() {
                 console.log(`Using sqlite database at ${location}`);
             }
 
-            // Create todo_items table
+            // Create users table first so foreign keys can reference it
             db.run(
-                'CREATE TABLE IF NOT EXISTS todo_items (id varchar(36) PRIMARY KEY, name varchar(255), completed boolean, userId varchar(36), FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE)',
-                (runErr) => {
-                    if (runErr) return rej(runErr);
+                'CREATE TABLE IF NOT EXISTS users (id varchar(36) PRIMARY KEY, email varchar(255) NOT NULL UNIQUE, username varchar(255) NOT NULL UNIQUE, hashedPassword varchar(255) NOT NULL, createdAt integer NOT NULL)',
+                (userErr) => {
+                    if (userErr) return rej(userErr);
 
-                    // Create users table
-                    db.run(
-                        'CREATE TABLE IF NOT EXISTS users (id varchar(36) PRIMARY KEY, email varchar(255) NOT NULL UNIQUE, username varchar(255) NOT NULL UNIQUE, hashedPassword varchar(255) NOT NULL, createdAt integer NOT NULL)',
-                        (userErr) => {
-                            if (userErr) return rej(userErr);
+                    db.all("PRAGMA table_info('users')", (infoErr, rows: any[]) => {
+                        if (infoErr) return rej(infoErr);
 
-                            // Create password_reset_tokens table
-                            db.run(
-                                'CREATE TABLE IF NOT EXISTS password_reset_tokens (id varchar(36) PRIMARY KEY, userId varchar(36) NOT NULL, token varchar(255) NOT NULL UNIQUE, expiresAt integer NOT NULL, createdAt integer NOT NULL, FOREIGN KEY (userId) REFERENCES users(id))',
-                                (tokenErr) => {
-                                    if (tokenErr) return rej(tokenErr);
-                                    acc();
-                                },
-                            );
-                        },
-                    );
+                        const hasUsername = rows.some((row) => row.name === 'username');
+                        const ensureUsernameColumn = hasUsername
+                            ? Promise.resolve()
+                            : new Promise<void>((resolve, reject) => {
+                                  db.run(
+                                      'ALTER TABLE users ADD COLUMN username varchar(255) NOT NULL DEFAULT ""',
+                                      (alterErr) => {
+                                          if (alterErr) return reject(alterErr);
+                                          db.run(
+                                              'UPDATE users SET username = email WHERE username = ""',
+                                              (updateErr) => {
+                                                  if (updateErr) return reject(updateErr);
+                                                  db.run(
+                                                      'CREATE UNIQUE INDEX IF NOT EXISTS idx_users_username ON users(username)',
+                                                      (indexErr) => {
+                                                          if (indexErr) return reject(indexErr);
+                                                          resolve();
+                                                      },
+                                                  );
+                                              },
+                                          );
+                                      },
+                                  );
+                              });
+
+                        ensureUsernameColumn
+                            .then(() => {
+                                db.all("SELECT name FROM sqlite_master WHERE type='table' AND name='todo_items'", (todoTableErr, todoTableRows: any[]) => {
+                                    if (todoTableErr) return rej(todoTableErr);
+
+                                    const ensureTodoSchema = todoTableRows.length
+                                        ? new Promise<void>((resolve, reject) => {
+                                              db.all("PRAGMA table_info('todo_items')", (infoErr, cols: any[]) => {
+                                                  if (infoErr) return reject(infoErr);
+
+                                                  const hasUserId = cols.some((col) => col.name === 'userId');
+                                                  if (hasUserId) {
+                                                      return resolve();
+                                                  }
+
+                                                  db.run('ALTER TABLE todo_items ADD COLUMN userId varchar(36)', (alterErr) => {
+                                                      if (alterErr) return reject(alterErr);
+                                                      resolve();
+                                                  });
+                                              });
+                                          })
+                                        : new Promise<void>((resolve, reject) => {
+                                              db.run(
+                                                  'CREATE TABLE IF NOT EXISTS todo_items (id varchar(36) PRIMARY KEY, name varchar(255), completed boolean, userId varchar(36), FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE)',
+                                                  (runErr) => {
+                                                      if (runErr) return reject(runErr);
+                                                      resolve();
+                                                  },
+                                              );
+                                          });
+
+                                    ensureTodoSchema
+                                        .then(() => {
+                                            // Create password_reset_tokens table
+                                            db.run(
+                                                'CREATE TABLE IF NOT EXISTS password_reset_tokens (id varchar(36) PRIMARY KEY, userId varchar(36) NOT NULL, token varchar(255) NOT NULL UNIQUE, expiresAt integer NOT NULL, createdAt integer NOT NULL, FOREIGN KEY (userId) REFERENCES users(id))',
+                                                (tokenErr) => {
+                                                    if (tokenErr) return rej(tokenErr);
+                                                    acc();
+                                                },
+                                            );
+                                        })
+                                        .catch(rej);
+                                });
+                            })
+                            .catch(rej);
+                    });
                 },
             );
         });
