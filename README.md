@@ -1,56 +1,176 @@
-# Getting Started Todo App
+# Développer pour le cloud
 
-This project provides a sample todo list application. It demonstrates all of
-the current Docker best practices, ranging from the Compose file, to the
-Dockerfile, to CI (using GitHub Actions), and running tests. It's intended to 
-be well-documented to ensure anyone can come in and easily learn.
+Ce projet est à but d'apprentissage, le projet original est récupéré depuis le repository de docker. C'est une application de todolist. Le but est est de la refactorisé et de l'optimiser pour le cloud avec Docker, TypeScript, des tests et de la CI/CD
 
-## Application architecture
+Le projet est composé de deux parties :
 
-![image](https://github.com/docker/getting-started-todo-app/assets/313480/c128b8e4-366f-4b6f-ad73-08e6652b7c4d)
+- un backend Node.js/Express qui expose l’API
+- un frontend React/Vite qui consomme cette API et affiche l’interface utilisateur
 
+L’objectif du dépôt est de proposer une base propre, lisible et évolutive, avec :
 
-This sample application is a simple React frontend that receives data from a
-Node.js backend. 
+- une architecture simple à démarrer en local
+- des tests unitaires front et back
+- du lint et du build pour les deux applications
+- une CI GitHub Actions prête à être utilisée
 
-When the application is packaged and shipped, the frontend is compiled into
-static HTML, CSS, and JS and then bundled with the backend where it is then
-served as static assets. So no... there is no server-side rendering going on
-with this sample app.
+## Table des matières
 
-During development, since the backend and frontend need different dev tools, 
-they are split into two separate services. This allows [Vite](https://vitejs.dev/) 
-to manage the React app while [nodemon](https://nodemon.io/) works with the 
-backend. With containers, it's easy to separate the development needs!
+- [Présentation](#présentation)
+- [Installation locale](#installation-locale)
+- [Avec Docker](#avec-docker)
+- [Sans Docker](#sans-docker)
+- [Commandes utiles](#commandes-utiles)
+- [CI](#ci)
 
-## Development
+## Présentation
 
-To spin up the project, simply install Docker Desktop and then run the following 
-commands:
+L’application permet de gérer une liste de tâches avec les actions classiques : création, édition, changement d’état et suppression.
 
-```
-git clone https://github.com/docker/getting-started-todo-app
-cd getting-started-todo-app
+En environnement Docker, le frontend et le backend sont lancés séparément, puis reliés par un reverse proxy. 
+
+Le projet inclut aussi phpMyAdmin pour inspecter la base MySQL en local.
+
+## Installation locale
+
+### Prérequis
+
+- Docker Desktop, si tu veux utiliser la stack conteneurisée
+- Node.js 18 ou supérieur et npm, si tu veux lancer le projet sans Docker
+- Git pour cloner le dépôt
+
+### Avec Docker
+
+1. Démarre la stack complète :
+
+```bash
 docker compose up --watch
 ```
 
-You'll see several container images get downloaded from Docker Hub and, after a
-moment, the application will be up and running! No need to install or configure
-anything on your machine!
+2. Ouvre l’application :
 
-Simply open to [http://localhost](http://localhost) to see the app up and running!
+- Application : http://localhost
+- Base de données : http://db.localhost
+- API : http://localhost/api
 
-Any changes made to either the backend or frontend should be seen immediately
-without needing to rebuild or restart the containers.
+3. Pour arrêter la stack :
 
-To help with the database, the development stack also includes phpMyAdmin, which
-can be accessed at [http://db.localhost](http://db.localhost) (most browsers will 
-resolve `*.localhost` correctly, so no hosts file changes should be required).
-
-### Tearing it down
-
-When you're done, simply remove the containers by running the following command:
-
-```
+```bash
 docker compose down
 ```
+
+4. Pour tout supprimer, y compris les volumes :
+
+```bash
+docker compose down -v
+```
+
+### Sans Docker
+
+1. Backend :
+
+```bash
+cd backend
+npm install
+copy .env.example .env
+npm run dev
+
+```
+
+Le backend sera disponible sur http://localhost:3000.
+
+2. Frontend :
+
+```bash
+cd client
+npm install
+npm run dev
+```
+
+Le frontend sera disponible sur http://localhost:5173.
+
+## Commandes utiles
+
+### Backend
+
+```bash
+npm run lint
+npm run lint:fix
+npm test
+npm run test:coverage
+npm run build
+npm run dev
+```
+
+### Frontend
+
+```bash
+npm run lint
+npm test
+npm run test:coverage
+npm run build
+npm run dev
+```
+
+### Docker
+
+```bash
+docker compose logs -f
+docker compose logs -f backend
+docker compose logs -f client
+docker compose logs -f proxy
+docker compose ps
+docker compose build
+docker compose exec backend sh
+docker compose exec client sh
+```
+
+### Base de données
+
+Les identifiants locaux utilisés dans Docker sont les suivants :
+
+- utilisateur : root
+- mot de passe : secret
+
+Pour ouvrir un shell MySQL dans le conteneur :
+
+```bash
+docker compose exec mysql mysql -u root -p
+```
+
+## CI
+
+Le dépôt utilise GitHub Actions pour automatiser la validation du code.
+
+### Pipeline principal
+
+Le workflow principal est déclenché sur push, pull request et lancement manuel.
+
+Il exécute :
+
+- le lint du backend et du frontend en parallèle
+- le contrôle des dépendances en parallèle
+- les tests backend
+- les tests frontend après les tests backend, car le frontend a besoin que le backend soit lancé
+- le build du backend
+- le build du frontend
+- SonarQube si des secrets sont configurés
+
+### SonarQube
+
+Le job SonarQube reste optionnel.
+
+Il se lance uniquement si au moins un token est disponible dans les secrets GitHub :
+
+- `SONAR_TOKEN`
+- ou `SONAR_TOKEN_DEFAULT`
+
+L’URL Sonar peut aussi être définie via `SONAR_HOST_URL`, sinon un fallback est utilisé.
+
+### Validation hebdomadaire des dépendances
+
+Un workflow séparé s’exécute tous les lundis à 7h pour valider les mises à jour de dépendances avec les tests et le build.
+
+### Dependabot
+
+Dependabot est configuré pour proposer automatiquement des mises à jour npm pour le backend et le frontend chaque semaine.
