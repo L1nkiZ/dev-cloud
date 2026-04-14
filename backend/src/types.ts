@@ -4,6 +4,24 @@ export type TodoItem = {
     completed: boolean;
 };
 
+export type User = {
+    id: string;
+    email: string;
+    username: string;
+    hashedPassword: string;
+    createdAt: number;
+};
+
+export type UserPublic = Omit<User, 'hashedPassword'>;
+
+export type PasswordResetToken = {
+    id: string;
+    userId: string;
+    token: string;
+    expiresAt: number;
+    createdAt: number;
+};
+
 export type TodoPersistence = {
     init: () => Promise<void>;
     teardown: () => Promise<void>;
@@ -15,4 +33,14 @@ export type TodoPersistence = {
         item: Pick<TodoItem, 'name' | 'completed'>,
     ) => Promise<void>;
     removeItem: (id: string | number) => Promise<void>;
+};
+
+export type AuthPersistence = {
+    getUserByEmail: (email: string) => Promise<User | undefined>;
+    getUserById: (id: string) => Promise<User | undefined>;
+    createUser: (email: string, hashedPassword: string, username: string) => Promise<User>;
+    updatePassword: (userId: string, hashedPassword: string) => Promise<void>;
+    createPasswordResetToken: (userId: string, token: string, expiresAt: number) => Promise<PasswordResetToken>;
+    getPasswordResetToken: (token: string) => Promise<PasswordResetToken | undefined>;
+    deletePasswordResetToken: (id: string) => Promise<void>;
 };

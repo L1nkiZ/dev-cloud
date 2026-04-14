@@ -12,4 +12,4 @@ const updateItem = async (req: Request, res: Response) => {
     res.send(item);
 };
 
-export = updateItem;
+export default updateItem;

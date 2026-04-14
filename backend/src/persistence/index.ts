@@ -1,10 +1,12 @@
 import 'dotenv/config';
-import type { TodoPersistence } from '../types';
-import mysqlPersistence from './mysql';
-import sqlitePersistence from './sqlite';
+import type { TodoPersistence, AuthPersistence } from '../types.js';
 
-const persistence = (
-    process.env.MYSQL_HOST ? mysqlPersistence : sqlitePersistence
-) as TodoPersistence;
+type Database = TodoPersistence & AuthPersistence;
 
-export = persistence;
+const persistenceModule = await (
+    process.env.MYSQL_HOST ? import('./mysql.js') : import('./sqlite.js')
+);
+
+const persistence = persistenceModule.default as Database;
+
+export default persistence;

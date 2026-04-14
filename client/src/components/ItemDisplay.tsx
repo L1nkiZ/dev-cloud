@@ -21,22 +21,28 @@ interface ItemDisplayProps {
   onItemRemoval: (item: TodoItem) => void
 }
 
+const API_URL = import.meta.env.VITE_API_URL || '/api'
+
 export function ItemDisplay({ item, onItemUpdate, onItemRemoval }: ItemDisplayProps) {
   const toggleCompletion = () => {
-    fetch(`/api/items/${item.id}`, {
+    fetch(`${API_URL}/items/${item.id}`, {
       method: 'PUT',
       body: JSON.stringify({
         name: item.name,
         completed: !item.completed,
       }),
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
     })
       .then((r) => r.json())
       .then(onItemUpdate)
   }
 
   const removeItem = () => {
-    fetch(`/api/items/${item.id}`, { method: 'DELETE' }).then(() => onItemRemoval(item))
+    fetch(`${API_URL}/items/${item.id}`, {
+      method: 'DELETE',
+      credentials: 'include',
+    }).then(() => onItemRemoval(item))
   }
 
   return (

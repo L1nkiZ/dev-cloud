@@ -13,4 +13,4 @@ const addItem = async (req: Request, res: Response) => {
     res.send(item);
 };
 
-export = addItem;
+export default addItem;

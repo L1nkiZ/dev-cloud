@@ -6,4 +6,4 @@ const deleteItem = async (req: Request, res: Response) => {
     res.sendStatus(200);
 };
 
-export = deleteItem;
+export default deleteItem;

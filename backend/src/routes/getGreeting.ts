@@ -1,11 +1,11 @@
-import type { Request, Response } from 'express';
+import type { Response } from 'express';
+import type { AuthRequest } from '../middleware/auth.js';
 
-const GREETING = 'Hello world!';
-
-const getGreeting = async (req: Request, res: Response) => {
+const getGreeting = async (req: AuthRequest, res: Response) => {
+    const name = req.username || 'world';
     res.send({
-        greeting: GREETING,
+        greeting: `Hello ${name}!`,
     });
 };
 
-export = getGreeting;
+export default getGreeting;

@@ -8,12 +8,16 @@ interface TodoItem {
     completed: boolean;
 }
 
+const API_URL = import.meta.env.VITE_API_URL || '/api';
+
 export function TodoListCard() {
     const [items, setItems] = useState<TodoItem[] | null>(null);
     const [error, setError] = useState('');
 
     useEffect(() => {
-        fetch('/api/items')
+        fetch(`${API_URL}/items`, {
+            credentials: 'include',
+        })
             .then((r) => {
                 if (!r.ok) {
                     throw new Error(`API error: ${r.status}`);

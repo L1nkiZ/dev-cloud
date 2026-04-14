@@ -13,6 +13,8 @@ interface AddItemFormProps {
     onNewItem: (item: TodoItem) => void;
 }
 
+const API_URL = import.meta.env.VITE_API_URL || '/api';
+
 export function AddItemForm({ onNewItem }: AddItemFormProps) {
     const [newItem, setNewItem] = useState('');
     const [submitting, setSubmitting] = useState(false);
@@ -25,9 +27,10 @@ export function AddItemForm({ onNewItem }: AddItemFormProps) {
             method: 'POST',
             body: JSON.stringify({ name: newItem }),
             headers: { 'Content-Type': 'application/json' },
+            credentials: 'include' as const,
         };
 
-        fetch('/api/items', options)
+        fetch(`${API_URL}/items`, options)
             .then((r) => r.json())
             .then((item: TodoItem) => {
                 onNewItem(item);

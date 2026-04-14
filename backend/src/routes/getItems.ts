@@ -6,4 +6,4 @@ const getItems = async (req: Request, res: Response) => {
     res.send(items);
 };
 
-export = getItems;
+export default getItems;

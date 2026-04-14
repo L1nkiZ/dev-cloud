@@ -1,10 +1,14 @@
 import { useEffect, useState } from 'react';
 
+const API_URL = import.meta.env.VITE_API_URL || '/api';
+
 export function Greeting() {
     const [greeting, setGreeting] = useState<string | null>(null);
 
     useEffect(() => {
-        fetch('/api/greeting')
+        fetch(`${API_URL}/greeting`, {
+            credentials: 'include',
+        })
             .then((res) => res.json())
             .then((data) => setGreeting(data.greeting));
     }, []);
