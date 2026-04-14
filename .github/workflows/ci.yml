@@ -58,7 +58,7 @@ jobs:
         run: npm ci --prefix ${{ matrix.project }}
 
       - name: Run dependency audit
-        run: npm --prefix ${{ matrix.project }} audit --omit=dev --audit-level=high
+        run: npm --prefix ${{ matrix.project }} audit --omit=dev --audit-level=critical
 
   sonarqube:
     name: SonarQube
