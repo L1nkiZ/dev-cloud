@@ -94,6 +94,27 @@ test('can mark an item as complete', async () => {
     ).toBeInTheDocument();
 });
 
+test('can edit an item name', async () => {
+    const user = userEvent.setup();
+
+    render(<TodoListCard />);
+
+    await screen.findByText('No items yet! Add one above!');
+    await addItemThroughUI('Initial title', user);
+
+    await user.click(screen.getByRole('button', { name: 'Edit item' }));
+
+    const editInput = await screen.findByRole('textbox', {
+        name: 'Edit item name',
+    });
+    await user.clear(editInput);
+    await user.type(editInput, 'Updated title');
+    await user.click(screen.getByRole('button', { name: 'Save item' }));
+
+    expect(await screen.findByText('Updated title')).toBeInTheDocument();
+    expect(screen.queryByText('Initial title')).not.toBeInTheDocument();
+});
+
 test('can uncheck a completed item', async () => {
     const user = userEvent.setup();
 

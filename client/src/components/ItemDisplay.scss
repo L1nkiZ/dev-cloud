@@ -24,8 +24,11 @@
     padding-top: 3px;
 }
 
-.remove {
+.actions {
     padding-left: 0;
+    display: flex;
+    justify-content: center;
+    gap: 0.25rem;
 }
 
 button:focus {

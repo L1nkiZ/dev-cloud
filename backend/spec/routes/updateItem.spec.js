@@ -31,3 +31,23 @@ test('it updates items correctly', async () => {
     expect(res.send.mock.calls[0].length).toBe(1);
     expect(res.send.mock.calls[0][0]).toEqual(ITEM);
 });
+
+test('it updates the todo text via update route', async () => {
+    const req = {
+        params: { id: 9876 },
+        body: { name: 'Edited task label', completed: true },
+    };
+    const res = { send: jest.fn() };
+    const updatedItem = { id: 9876, name: 'Edited task label', completed: true };
+
+    db.getItem.mockReturnValue(Promise.resolve(updatedItem));
+
+    await updateItem(req, res);
+
+    expect(db.updateItem).toHaveBeenCalledWith(req.params.id, {
+        name: 'Edited task label',
+        completed: true,
+    });
+    expect(db.getItem).toHaveBeenCalledWith(req.params.id);
+    expect(res.send).toHaveBeenCalledWith(updatedItem);
+});
