@@ -63,7 +63,6 @@ jobs:
   sonarqube:
     name: SonarQube
     runs-on: ubuntu-latest
-    if: ${{ secrets.SONAR_TOKEN != '' || secrets.SONAR_TOKEN_DEFAULT != '' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -75,11 +74,26 @@ jobs:
         with:
           node-version: 20
 
+      - name: Prepare Sonar credentials
+        id: sonar
+        shell: bash
+        run: |
+          if [ -n "${{ secrets.SONAR_TOKEN }}" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+            echo "token=${{ secrets.SONAR_TOKEN }}" >> "$GITHUB_OUTPUT"
+          elif [ -n "${{ secrets.SONAR_TOKEN_DEFAULT }}" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+            echo "token=${{ secrets.SONAR_TOKEN_DEFAULT }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: SonarQube Scan
+        if: ${{ steps.sonar.outputs.enabled == 'true' }}
         uses: SonarSource/sonarqube-scan-action@v4
         env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN != '' && secrets.SONAR_TOKEN || secrets.SONAR_TOKEN_DEFAULT }}
-          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL != '' && secrets.SONAR_HOST_URL || 'https://sonarcloud.io' }}
+          SONAR_TOKEN: ${{ steps.sonar.outputs.token }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL || 'https://sonarcloud.io' }}
 
   backend-tests:
     name: Backend Tests
