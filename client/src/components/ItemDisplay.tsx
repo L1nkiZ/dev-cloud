@@ -24,7 +24,7 @@ interface ItemDisplayProps {
   onItemRemoval: (item: TodoItem) => void
 }
 
-const API_URL = process.env.VITE_API_URL || '/api'
+const API_URL = '/api'
 
 export function ItemDisplay({ item, onItemUpdate, onItemRemoval }: ItemDisplayProps) {
   const [isEditing, setIsEditing] = useState(false)

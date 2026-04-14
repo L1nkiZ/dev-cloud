@@ -8,7 +8,7 @@ interface TodoItem {
     completed: boolean;
 }
 
-const API_URL = process.env.VITE_API_URL || '/api';
+const API_URL = '/api';
 
 export function TodoListCard() {
     const [items, setItems] = useState<TodoItem[] | null>(null);

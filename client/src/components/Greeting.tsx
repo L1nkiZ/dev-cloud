@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-const API_URL = process.env.VITE_API_URL || '/api';
+const API_URL = '/api';
 
 export function Greeting() {
     const [greeting, setGreeting] = useState<string | null>(null);
