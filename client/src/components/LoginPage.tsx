@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { signIn } from '../services/authService';
-import { useAuth } from '../services/authContext';
+import { useAuth } from '../services/useAuth';
 import './AuthPages.scss';
 
 export default function LoginPage() {
@@ -67,7 +67,7 @@ export default function LoginPage() {
                 <div className="auth-links">
                     <Link to="/forgot-password">Mot de passe oublié ?</Link>
                     <p>
-                        Pas encore de compte ? <Link to="/sign-up">S'inscrire</Link>
+                        Pas encore de compte ? <Link to="/sign-up">S&apos;inscrire</Link>
                     </p>
                 </div>
             </div>

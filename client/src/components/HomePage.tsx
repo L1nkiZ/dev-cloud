@@ -5,10 +5,10 @@ import Row from 'react-bootstrap/Row';
 import Button from 'react-bootstrap/Button';
 import { TodoListCard } from './TodoListCard';
 import { Greeting } from './Greeting';
-import { useAuth } from '../services/authContext';
+import { useAuth } from '../services/useAuth';
 
 export default function HomePage() {
-    const { user, logout } = useAuth();
+    const { logout } = useAuth();
     const navigate = useNavigate();
 
     const handleLogout = async () => {
