@@ -42,9 +42,14 @@ test('it updates the todo text via update route', async () => {
     const req = {
         params: { id: 9876 },
         body: { name: 'Edited task label', completed: true },
+        userId: 'test-user-id',
     };
-    const res = { send: jest.fn() };
-    const updatedItem = { id: 9876, name: 'Edited task label', completed: true };
+    const res = {
+        status: jest.fn(() => res),
+        send: jest.fn(),
+        json: jest.fn(),
+    };
+    const updatedItem = { id: 9876, name: 'Edited task label', completed: true, userId: 'test-user-id' };
 
     db.getItem.mockReturnValue(Promise.resolve(updatedItem));
 
@@ -53,7 +58,7 @@ test('it updates the todo text via update route', async () => {
     expect(db.updateItem).toHaveBeenCalledWith(req.params.id, {
         name: 'Edited task label',
         completed: true,
-    });
-    expect(db.getItem).toHaveBeenCalledWith(req.params.id);
+    }, req.userId);
+    expect(db.getItem).toHaveBeenCalledWith(req.params.id, req.userId);
     expect(res.send).toHaveBeenCalledWith(updatedItem);
 });
