@@ -2,9 +2,12 @@ import Container from 'react-bootstrap/Container'
 import Row from 'react-bootstrap/Row'
 import Col from 'react-bootstrap/Col'
 import Button from 'react-bootstrap/Button'
+import Form from 'react-bootstrap/Form'
+import { useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import type { IconProp } from '@fortawesome/fontawesome-svg-core'
 import { faTrash } from '@fortawesome/free-solid-svg-icons/faTrash'
+import { faPen } from '@fortawesome/free-solid-svg-icons/faPen'
 import faCheckSquare from '@fortawesome/fontawesome-free-regular/faCheckSquare'
 import faSquare from '@fortawesome/fontawesome-free-regular/faSquare'
 import './ItemDisplay.scss'
@@ -22,6 +25,9 @@ interface ItemDisplayProps {
 }
 
 export function ItemDisplay({ item, onItemUpdate, onItemRemoval }: ItemDisplayProps) {
+  const [isEditing, setIsEditing] = useState(false)
+  const [editedName, setEditedName] = useState(item.name)
+
   const toggleCompletion = () => {
     fetch(`/api/items/${item.id}`, {
       method: 'PUT',
@@ -33,6 +39,34 @@ export function ItemDisplay({ item, onItemUpdate, onItemRemoval }: ItemDisplayPr
     })
       .then((r) => r.json())
       .then(onItemUpdate)
+  }
+
+  const toggleEditing = () => {
+    setEditedName(item.name)
+    setIsEditing((current) => !current)
+  }
+
+  const saveEdition = () => {
+    const trimmedName = editedName.trim()
+    if (!trimmedName) {
+      setEditedName(item.name)
+      setIsEditing(false)
+      return
+    }
+
+    fetch(`/api/items/${item.id}`, {
+      method: 'PUT',
+      body: JSON.stringify({
+        name: trimmedName,
+        completed: item.completed,
+      }),
+      headers: { 'Content-Type': 'application/json' },
+    })
+      .then((r) => r.json())
+      .then((updatedItem) => {
+        onItemUpdate(updatedItem)
+        setIsEditing(false)
+      })
   }
 
   const removeItem = () => {
@@ -55,9 +89,33 @@ export function ItemDisplay({ item, onItemUpdate, onItemRemoval }: ItemDisplayPr
           </Button>
         </Col>
         <Col xs={8} className="name">
-          {item.name}
+          {isEditing ? (
+            <Form.Control
+              size="sm"
+              aria-label="Edit item name"
+              value={editedName}
+              onChange={(event) => setEditedName(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  event.preventDefault()
+                  saveEdition()
+                }
+              }}
+            />
+          ) : (
+            item.name
+          )}
         </Col>
-        <Col xs={2} className="text-center remove">
+        <Col xs={2} className="text-center actions">
+          {isEditing ? (
+            <Button size="sm" variant="link" onClick={saveEdition} aria-label="Save item">
+              Save
+            </Button>
+          ) : (
+            <Button size="sm" variant="link" onClick={toggleEditing} aria-label="Edit item">
+              <FontAwesomeIcon icon={faPen} />
+            </Button>
+          )}
           <Button size="sm" variant="link" onClick={removeItem} aria-label="Remove Item">
             <FontAwesomeIcon icon={faTrash} className="text-danger" />
           </Button>
