@@ -26,7 +26,7 @@ export function authMiddleware(req: AuthRequest, res: Response, next: NextFuncti
         req.userEmail = payload.email;
         req.username = payload.username;
         next();
-    } catch (error) {
+    } catch {
         res.status(401).json({ error: 'Unauthorized' });
     }
 }
