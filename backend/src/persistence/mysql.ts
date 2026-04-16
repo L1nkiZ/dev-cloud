@@ -82,15 +82,17 @@ async function init() {
     // Drop and recreate todo_items table with userId
     try {
         await query('DROP TABLE IF EXISTS todo_items');
-    } catch (dropErr: any) {
-        console.error('[MySQL] Warning: Could not drop todo_items (may not exist):', dropErr.message);
+    } catch (dropErr: unknown) {
+        const err = dropErr as Record<string, unknown>;
+        console.error('[MySQL] Warning: Could not drop todo_items (may not exist):', err.message);
     }
 
     // Drop password_reset_tokens if exists
     try {
         await query('DROP TABLE IF EXISTS password_reset_tokens');
-    } catch (dropErr: any) {
-        console.error('[MySQL] Warning: Could not drop password_reset_tokens (may not exist):', dropErr.message);
+    } catch (dropErr: unknown) {
+        const err = dropErr as Record<string, unknown>;
+        console.error('[MySQL] Warning: Could not drop password_reset_tokens (may not exist):', err.message);
     }
 
     // Create users table
@@ -102,9 +104,10 @@ async function init() {
     // Try to add username column if it doesn't exist (for existing tables)
     try {
         await query('ALTER TABLE users ADD COLUMN username varchar(255) NOT NULL UNIQUE');
-    } catch (alterErr: any) {
-        if (alterErr.code !== 'ER_DUP_FIELDNAME') {
-            console.error('[MySQL] Error adding username column:', alterErr);
+    } catch (alterErr: unknown) {
+        const err = alterErr as Record<string, unknown>;
+        if (err.code !== 'ER_DUP_FIELDNAME') {
+            console.error('[MySQL] Error adding username column:', err);
             throw alterErr;
         }
     }

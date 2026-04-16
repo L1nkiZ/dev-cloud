@@ -67,7 +67,7 @@ export default function LoginPage() {
                 <div className="auth-links">
                     <Link to="/forgot-password">Mot de passe oublié ?</Link>
                     <p>
-                        Pas encore de compte ? <Link to="/sign-up">S'inscrire</Link>
+                        Pas encore de compte ? <Link to="/sign-up">S&apos;inscrire</Link>
                     </p>
                 </div>
             </div>

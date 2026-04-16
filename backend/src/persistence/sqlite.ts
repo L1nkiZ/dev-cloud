@@ -56,7 +56,7 @@ function init() {
                 (userErr) => {
                     if (userErr) return rej(userErr);
 
-                    db.all("PRAGMA table_info('users')", (infoErr, rows: any[]) => {
+                    db.all("PRAGMA table_info('users')", (infoErr, rows: { name: string; type: string; notnull: number; dflt_value: unknown; pk: number }[]) => {
                         if (infoErr) return rej(infoErr);
 
                         const hasUsername = rows.some((row) => row.name === 'username');
@@ -86,12 +86,12 @@ function init() {
 
                         ensureUsernameColumn
                             .then(() => {
-                                db.all("SELECT name FROM sqlite_master WHERE type='table' AND name='todo_items'", (todoTableErr, todoTableRows: any[]) => {
+                                db.all("SELECT name FROM sqlite_master WHERE type='table' AND name='todo_items'", (todoTableErr, todoTableRows: { name: string }[]) => {
                                     if (todoTableErr) return rej(todoTableErr);
 
                                     const ensureTodoSchema = todoTableRows.length
                                         ? new Promise<void>((resolve, reject) => {
-                                              db.all("PRAGMA table_info('todo_items')", (infoErr, cols: any[]) => {
+                                              db.all("PRAGMA table_info('todo_items')", (infoErr, cols: { name: string; type: string; notnull: number; dflt_value: unknown; pk: number }[]) => {
                                                   if (infoErr) return reject(infoErr);
 
                                                   const hasUserId = cols.some((col) => col.name === 'userId');

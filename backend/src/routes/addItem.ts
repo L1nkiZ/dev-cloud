@@ -1,7 +1,7 @@
 import type { Response } from 'express';
 import type { AuthRequest } from '../middleware/auth.js';
 import { v4 as uuid } from 'uuid';
-import db from '../persistence';
+import db from '../persistence/index';
 
 const addItem = async (req: AuthRequest, res: Response) => {
     if (!req.userId) {
