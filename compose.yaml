@@ -113,6 +113,8 @@ services:
       context: ./client
       dockerfile: Dockerfile
       target: client-dev
+    environment:
+      VITE_BACKEND_URL: http://backend:3000
     develop:
       watch:
         - path: ./client/src

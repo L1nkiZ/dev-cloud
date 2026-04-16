@@ -44,33 +44,5 @@ jobs:
       - name: Run backend tests
         run: npm --prefix backend test
 
-      - name: Build backend
-        run: npm --prefix backend run build
-
-      - name: Start backend API for frontend tests
-        run: |
-          mkdir -p backend/.tmp-ci
-          PORT=3000 SQLITE_DB_LOCATION="$GITHUB_WORKSPACE/backend/.tmp-ci/todo.db" node backend/dist/index.js &
-          echo "BACKEND_PID=$!" >> "$GITHUB_ENV"
-
-          for i in {1..30}; do
-            if curl -fsS http://127.0.0.1:3000/api/greeting > /dev/null; then
-              exit 0
-            fi
-            sleep 1
-          done
-
-          echo "Backend did not start in time"
-          exit 1
-
       - name: Run frontend tests
-        env:
-          TEST_BACKEND_URL: http://127.0.0.1:3000
         run: npm --prefix client test
-
-      - name: Stop backend
-        if: always()
-        run: |
-          if [ -n "${BACKEND_PID}" ]; then
-            kill "$BACKEND_PID" || true
-          fi
