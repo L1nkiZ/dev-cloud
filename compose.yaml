@@ -67,13 +67,15 @@ services:
   ###################################################
   backend:
     build:
-      context: ./
+      context: ./backend
+      dockerfile: Dockerfile
       target: backend-dev
     environment:
       MYSQL_HOST: mysql
       MYSQL_USER: root
       MYSQL_PASSWORD: secret
       MYSQL_DB: todos
+      DB_TYPE: mysql
     depends_on:
       mysql:
         condition: service_healthy
@@ -85,7 +87,10 @@ services:
         - path: ./backend/package.json
           action: rebuild
     labels:
+      traefik.enable: "true"
       traefik.http.routers.backend.rule: Host(`localhost`) && PathPrefix(`/api`)
+      traefik.http.routers.backend.entrypoints: web
+      traefik.http.routers.backend.service: backend
       traefik.http.services.backend.loadbalancer.server.port: 3000
 
   ###################################################
@@ -105,8 +110,11 @@ services:
   ###################################################
   client:
     build:
-      context: ./
+      context: ./client
+      dockerfile: Dockerfile
       target: client-dev
+    environment:
+      VITE_BACKEND_URL: http://backend:3000
     develop:
       watch:
         - path: ./client/src
