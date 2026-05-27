@@ -1,0 +1,104 @@
+###################################################
+# Deployment — Backend (Node.js API + React frontend)
+# The production image is built from Dockerfile.prod.
+# It serves the React app at "/" and the API at "/api".
+###################################################
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: dev-cloud
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      # Wait for MySQL to accept connections before starting the backend.
+      initContainers:
+        - name: wait-for-mysql
+          image: busybox:latest
+          command:
+            - sh
+            - -c
+            - "until nc -z -w3 mysql 3306; do echo 'Waiting for MySQL...'; sleep 3; done"
+      containers:
+        - name: backend
+          image: dev-cloud/backend:latest
+          # IfNotPresent uses the locally built image without pulling from a registry.
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+          env:
+            - name: MYSQL_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: dev-cloud-config
+                  key: MYSQL_HOST
+            - name: MYSQL_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: dev-cloud-config
+                  key: MYSQL_USER
+            - name: MYSQL_DB
+              valueFrom:
+                configMapKeyRef:
+                  name: dev-cloud-config
+                  key: MYSQL_DB
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: dev-cloud-secret
+                  key: MYSQL_PASSWORD
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: dev-cloud-secret
+                  key: JWT_SECRET
+            - name: NODE_ENV
+              valueFrom:
+                configMapKeyRef:
+                  name: dev-cloud-config
+                  key: NODE_ENV
+            - name: PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: dev-cloud-config
+                  key: PORT
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 3000
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            failureThreshold: 3
+---
+###################################################
+# Service — Backend (LoadBalancer)
+# Docker Desktop exposes LoadBalancer services on
+# localhost automatically. Port 80 → container 3000.
+###################################################
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+  namespace: dev-cloud
+spec:
+  selector:
+    app: backend
+  ports:
+    - name: http
+      port: 80
+      targetPort: 3000
+  type: LoadBalancer
