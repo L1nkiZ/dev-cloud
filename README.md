@@ -1,176 +1,132 @@
 # Développer pour le cloud
 
-Ce projet est à but d'apprentissage, le projet original est récupéré depuis le repository de docker. C'est une application de todolist. Le but est est de la refactorisé et de l'optimiser pour le cloud avec Docker, TypeScript, des tests et de la CI/CD
+Application de todolist refactorisée pour le cloud, avec une architecture **microservices**, Docker, TypeScript, tests unitaires, CI/CD et monitoring Prometheus/Grafana.
 
-Le projet est composé de deux parties :
+## Architecture
 
-- un backend Node.js/Express qui expose l’API
-- un frontend React/Vite qui consomme cette API et affiche l’interface utilisateur
+Le projet est composé de trois services applicatifs et d'une stack de monitoring :
 
-L’objectif du dépôt est de proposer une base propre, lisible et évolutive, avec :
-
-- une architecture simple à démarrer en local
-- des tests unitaires front et back
-- du lint et du build pour les deux applications
-- une CI GitHub Actions prête à être utilisée
+| Service | Rôle | Port interne |
+|---|---|---|
+| `auth-service` | Inscription, connexion, gestion JWT | 3001 |
+| `backend` (todo-service + API Gateway) | CRUD todos, proxy vers auth-service | 3000 |
+| `client` | Interface React/Vite | 5173 |
+| `prometheus` | Collecte des métriques | 9090 |
+| `grafana` | Dashboard de monitoring | 3333 |
 
 ## Table des matières
 
-- [Présentation](#présentation)
-- [Installation locale](#installation-locale)
-- [Avec Docker](#avec-docker)
-- [Sans Docker](#sans-docker)
+- [Démarrage rapide](#démarrage-rapide)
+- [URLs et accès](#urls-et-accès)
+- [Credentials par défaut](#credentials-par-défaut)
+- [Lancer sans Docker](#lancer-sans-docker)
+- [Monitoring Prometheus + Grafana](#monitoring-prometheus--grafana)
 - [Commandes utiles](#commandes-utiles)
+- [Tests](#tests)
 - [CI](#ci)
 
-## Présentation
-
-L’application permet de gérer une liste de tâches avec les actions classiques : création, édition, changement d’état et suppression.
-
-En environnement Docker, le frontend et le backend sont lancés séparément, puis reliés par un reverse proxy. 
-
-Le projet inclut aussi phpMyAdmin pour inspecter la base MySQL en local.
-
-## Installation locale
+## Démarrage rapide
 
 ### Prérequis
 
-- Docker Desktop, si tu veux utiliser la stack conteneurisée
-- Node.js 18 ou supérieur et npm, si tu veux lancer le projet sans Docker
-- Git pour cloner le dépôt
+- **Docker Desktop** (recommandé)
+- **Node.js 18+** et npm pour lancer sans Docker
+- **Git** pour cloner le dépôt
 
-### Avec Docker
-
-1. Démarre la stack complète :
+### Lancer avec Docker
 
 ```bash
-docker compose up --watch
+git clone <repo>
+cd dev-cloud
+docker compose up --build --watch
 ```
 
-2. Ouvre l’application :
+## URLs et accès
 
-- Application : http://localhost
-- Base de données : http://db.localhost
-- API : http://localhost/api
+| URL | Service | Description |
+|---|---|---|
+| http://localhost | Application | Interface Todo (frontend React) |
+| http://localhost/api/health | API | Santé du backend |
+| http://db.localhost | phpMyAdmin | Interface base de données MySQL |
+| http://localhost:9090 | Prometheus | Métriques brutes + targets |
+| http://localhost:3333 | Grafana | Dashboard de monitoring |
 
-3. Pour arrêter la stack :
+## Credentials par défaut
 
-```bash
-docker compose down
-```
+### Compte utilisateur de test (créé automatiquement au démarrage)
 
-4. Pour tout supprimer, y compris les volumes :
+| Champ | Valeur |
+|---|---|
+| Email | `user@example.com` |
+| Mot de passe | `password` |
 
-```bash
-docker compose down -v
-```
+### Base de données MySQL
 
-### Sans Docker
+| Champ | Valeur |
+|---|---|
+| Hôte | `mysql` (interne Docker) |
+| Utilisateur | `root` |
+| Mot de passe | `secret` |
+| Base | `todos` |
 
-1. Backend :
+Interface web : http://db.localhost (phpMyAdmin, déjà connecté automatiquement)
 
-```bash
-cd backend
-npm install
-copy .env.example .env
-npm run dev
+### Grafana
 
-```
+| Champ | Valeur |
+|---|---|
+| URL | http://localhost:3333 |
+| Utilisateur | `admin` |
+| Mot de passe | `admin` |
 
-Le backend sera disponible sur http://localhost:3000.
+## Monitoring Prometheus + Grafana
 
-2. Frontend :
+### Grafana — Dashboard principal
 
-```bash
-cd client
-npm install
-npm run dev
-```
+1. Ouvre http://localhost:3333
+2. Identifiants : `admin` / `admin`
+3. Va dans **Dashboards > Browse > Dev Cloud - Microservices**
 
-Le frontend sera disponible sur http://localhost:5173.
+| Section | Afficher |
+|---|---|
+| **Auth Service** | Logins réussis/échoués par seconde, inscriptions, échecs de validation token |
+| **Todo Service** | Opérations CRUD (create/update/delete/list) par seconde |
+| **Performance HTTP** | Latence p50 / p95 / p99 pour chaque service |
+| **Ressources Système** | Heap Node.js, Event Loop Lag |
 
-## Commandes utiles
+### Prometheus — Targets et métriques brutes
 
-### Backend
+1. Ouvre http://localhost:9090
+2. **Status > Targets** — les deux targets `auth-service` et `todo-service` doivent être en état **UP**
+3. Champ de recherche, pour explorer une métrique :
 
-```bash
-npm run lint
-npm run lint:fix
-npm test
-npm run test:coverage
-npm run build
-npm run dev
-```
-
-### Frontend
-
-```bash
-npm run lint
-npm test
-npm run test:coverage
-npm run build
-npm run dev
-```
-
-### Docker
-
-```bash
-docker compose logs -f
-docker compose logs -f backend
-docker compose logs -f client
-docker compose logs -f proxy
-docker compose ps
-docker compose build
-docker compose exec backend sh
-docker compose exec client sh
-```
-
-### Base de données
-
-Les identifiants locaux utilisés dans Docker sont les suivants :
-
-- utilisateur : root
-- mot de passe : secret
-
-Pour ouvrir un shell MySQL dans le conteneur :
-
-```bash
-docker compose exec mysql mysql -u root -p
-```
+| Métrique | Description |
+|---|---|
+| `auth_login_total` | Compteur de logins par statut |
+| `auth_signup_total` | Compteur d'inscriptions |
+| `auth_validate_total` | Validations de token inter-service |
+| `todo_operations_total` | Opérations CRUD todos |
+| `http_request_duration_seconds` | Histogramme de latence |
+| `nodejs_heap_size_used_bytes` | Mémoire heap Node.js |
 
 ## CI
 
-Le dépôt utilise GitHub Actions pour automatiser la validation du code.
+Le dépôt utilise **GitHub Actions** pour automatiser la validation du code.
 
 ### Pipeline principal
 
-Le workflow principal est déclenché sur push, pull request et lancement manuel.
+Déclenché sur push, pull request et lancement manuel :
 
-Il exécute :
-
-- le lint du backend et du frontend en parallèle
-- le contrôle des dépendances en parallèle
-- les tests backend
-- les tests frontend après les tests backend, car le frontend a besoin que le backend soit lancé
-- le build du backend
-- le build du frontend
-- SonarQube si des secrets sont configurés
-
-### SonarQube
-
-Le job SonarQube reste optionnel.
-
-Il se lance uniquement si au moins un token est disponible dans les secrets GitHub :
-
-- `SONAR_TOKEN`
-- ou `SONAR_TOKEN_DEFAULT`
-
-L’URL Sonar peut aussi être définie via `SONAR_HOST_URL`, sinon un fallback est utilisé.
+- Lint backend et frontend en parallèle
+- Contrôle des dépendances
+- Tests backend > tests frontend
+- Build backend et frontend
+- SonarQube (optionnel, si `SONAR_TOKEN` est configuré dans les secrets GitHub)
 
 ### Validation hebdomadaire des dépendances
 
-Un workflow séparé s’exécute tous les lundis à 7h pour valider les mises à jour de dépendances avec les tests et le build.
+Workflow séparé, tous les lundis à 7h, pour valider les mises à jour de dépendances.
 
 ### Dependabot
 
-Dependabot est configuré pour proposer automatiquement des mises à jour npm pour le backend et le frontend chaque semaine.
+Mises à jour npm automatiques chaque semaine pour `backend`, `auth-service` et `client`.
