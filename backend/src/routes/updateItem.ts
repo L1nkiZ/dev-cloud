@@ -1,6 +1,6 @@
 import type { Response } from 'express';
 import type { AuthRequest } from '../middleware/auth.js';
-import db from '../persistence/index';
+import db from '../persistence/index.js';
 
 const updateItem = async (req: AuthRequest, res: Response) => {
     if (!req.userId) {

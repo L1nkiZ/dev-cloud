@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express';
-import db from '../persistence';
-import { generateToken, hashPassword, comparePassword, generateResetToken } from '../auth';
+import db from '../persistence/index.js';
+import { generateToken, hashPassword, comparePassword, generateResetToken } from '../auth.js';
 import type { AuthRequest } from '../middleware/auth.js';
 
 const RESET_TOKEN_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours
