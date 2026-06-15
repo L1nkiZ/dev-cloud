@@ -9,3 +9,5 @@ data:
   MYSQL_DB: "todos"
   NODE_ENV: "production"
   PORT: "3000"
+  AUTH_SERVICE_URL: "http://auth-service:3001"
+  AUTH_SERVICE_PORT: "3001"
