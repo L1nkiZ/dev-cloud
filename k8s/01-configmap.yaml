@@ -11,3 +11,6 @@ data:
   PORT: "3000"
   AUTH_SERVICE_URL: "http://auth-service:3001"
   AUTH_SERVICE_PORT: "3001"
+  VITE_API_URL: "http://backend:3000/api"
+  VITE_BACKEND_URL: "http://backend:3000"
+  VITE_AUTH_SERVICE_URL: "http://auth-service:3001"

@@ -1,18 +1,15 @@
 module.exports = {
+    preset: 'ts-jest',
     testEnvironment: 'node',
+    extensionsToTreatAsEsm: ['.ts'],
     moduleNameMapper: {
         '^(\\.{1,2}/.*)\\.js$': '$1',
     },
     transform: {
-        '^.+\\.ts$': ['ts-jest', { tsconfig: 'tsconfig.json' }],
-        '^.+\\.js$': [
-            'babel-jest',
-            {
-                presets: [
-                    ['@babel/preset-env', { targets: { node: 'current' } }],
-                ],
-            },
-        ],
+        '^.+\\.ts$': ['ts-jest', { 
+            useESM: true,
+            tsconfig: 'tsconfig.json' 
+        }],
     },
     moduleFileExtensions: ['ts', 'js', 'json'],
     collectCoverageFrom: [
