@@ -28,9 +28,16 @@ spec:
             - "until nc -z -w3 mysql 3306; do echo 'Waiting for MySQL...'; sleep 3; done"
       containers:
         - name: backend
-          image: dev-cloud/backend:latest
+          image: backend:latest
           # IfNotPresent uses the locally built image without pulling from a registry.
           imagePullPolicy: IfNotPresent
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "250m"
+              memory: "256Mi"
           ports:
             - containerPort: 3000
           env:
