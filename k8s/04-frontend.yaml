@@ -1,25 +1,25 @@
 ###################################################
-# Deployment — Client (React Frontend)
-# The client frontend connects to backend and auth-service.
+# Deployment — Frontend (React Frontend)
+# The frontend connects to backend and auth-service.
 ###################################################
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: client
+  name: frontend
   namespace: dev-cloud
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: client
+      app: frontend
   template:
     metadata:
       labels:
-        app: client
+        app: frontend
     spec:
       containers:
-        - name: client
-          image: frontend:latest
+        - name: frontend
+          image: client:latest
           imagePullPolicy: IfNotPresent
           resources:
             requests:
@@ -32,20 +32,11 @@ spec:
             - containerPort: 5173
           env:
             - name: VITE_API_URL
-              valueFrom:
-                configMapKeyRef:
-                  name: dev-cloud-config
-                  key: VITE_API_URL
+              value: "http://0.0.0.0/api"
             - name: VITE_BACKEND_URL
-              valueFrom:
-                configMapKeyRef:
-                  name: dev-cloud-config
-                  key: VITE_BACKEND_URL
-            - name: VITE_AUTH_SERVICE_URL
-              valueFrom:
-                configMapKeyRef:
-                  name: dev-cloud-config
-                  key: VITE_AUTH_SERVICE_URL
+              value: "http://0.0.0.0"
+            # - name: VITE_AUTH_SERVICE_URL
+            #   value: "http://0.0.0.0:3001"
             - name: NODE_ENV
               valueFrom:
                 configMapKeyRef:
@@ -67,19 +58,19 @@ spec:
             failureThreshold: 3
 ---
 ###################################################
-# Service — Client (LoadBalancer)
-# Exposes the frontend on port 80 (mapped from 5173)
+# Service — Frontend (LoadBalancer)
+# Exposes the frontend on port 5173
 ###################################################
 apiVersion: v1
 kind: Service
 metadata:
-  name: client
+  name: frontend
   namespace: dev-cloud
 spec:
   selector:
-    app: client
+    app: frontend
   ports:
     - name: http
-      port: 80
+      port: 5173
       targetPort: 5173
   type: LoadBalancer

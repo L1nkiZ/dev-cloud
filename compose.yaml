@@ -26,6 +26,7 @@ services:
       context: ./auth-service
       dockerfile: Dockerfile
       target: auth-dev
+    image: auth-service:latest
     environment:
       PORT: 3001
       MYSQL_HOST: mysql
@@ -56,6 +57,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
       target: backend-dev
+    image: backend:latest
     environment:
       MYSQL_HOST: mysql
       MYSQL_USER: root
@@ -90,6 +92,7 @@ services:
       context: ./client
       dockerfile: Dockerfile
       target: client-dev
+    image: client:latest
     environment:
       VITE_BACKEND_URL: http://backend:3000
     develop:
