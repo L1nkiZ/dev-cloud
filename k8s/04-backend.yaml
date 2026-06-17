@@ -1,7 +1,7 @@
 ###################################################
-# Deployment — Backend (Node.js API + React frontend)
-# The production image is built from Dockerfile.prod.
-# It serves the React app at "/" and the API at "/api".
+# Deployment — Backend (Node.js API)
+# API accessible en interne uniquement via ClusterIP.
+# Le trafic entrant passe par le reverse proxy nginx.
 ###################################################
 apiVersion: apps/v1
 kind: Deployment
@@ -18,7 +18,6 @@ spec:
       labels:
         app: backend
     spec:
-      # Wait for MySQL to accept connections before starting the backend.
       initContainers:
         - name: wait-for-mysql
           image: busybox:latest
@@ -29,7 +28,6 @@ spec:
       containers:
         - name: backend
           image: dev-cloud/backend:latest
-          # IfNotPresent uses the locally built image without pulling from a registry.
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3000
@@ -69,6 +67,13 @@ spec:
                 configMapKeyRef:
                   name: dev-cloud-config
                   key: PORT
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "300m"
           readinessProbe:
             httpGet:
               path: /api/health
@@ -85,9 +90,8 @@ spec:
             failureThreshold: 3
 ---
 ###################################################
-# Service — Backend (LoadBalancer)
-# Docker Desktop exposes LoadBalancer services on
-# localhost automatically. Port 80 → container 3000.
+# Service — Backend (ClusterIP, interne uniquement)
+# Accessible via nginx sur /api depuis l'extérieur.
 ###################################################
 apiVersion: v1
 kind: Service
@@ -99,6 +103,6 @@ spec:
     app: backend
   ports:
     - name: http
-      port: 80
+      port: 3000
       targetPort: 3000
-  type: LoadBalancer
+  type: ClusterIP

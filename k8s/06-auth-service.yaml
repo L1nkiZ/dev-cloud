@@ -1,5 +1,6 @@
 ###################################################
 # Deployment — Auth Service (port 3001)
+# Service interne uniquement, appelé par le backend.
 ###################################################
 apiVersion: apps/v1
 kind: Deployment
@@ -57,11 +58,28 @@ spec:
                 secretKeyRef:
                   name: dev-cloud-secret
                   key: JWT_SECRET
+            - name: JWT_EXPIRY
+              valueFrom:
+                configMapKeyRef:
+                  name: dev-cloud-config
+                  key: JWT_EXPIRY
+            - name: FRONTEND_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: dev-cloud-config
+                  key: FRONTEND_URL
             - name: NODE_ENV
               valueFrom:
                 configMapKeyRef:
                   name: dev-cloud-config
                   key: NODE_ENV
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "300m"
           readinessProbe:
             httpGet:
               path: /health
@@ -78,7 +96,7 @@ spec:
             failureThreshold: 3
 ---
 ###################################################
-# Service — Auth Service (ClusterIP, internal only)
+# Service — Auth Service (ClusterIP, interne uniquement)
 ###################################################
 apiVersion: v1
 kind: Service
