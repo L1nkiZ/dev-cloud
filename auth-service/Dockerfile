@@ -1,21 +1,13 @@
-FROM node:latest AS base
+FROM node:lts-alpine AS deps
 WORKDIR /usr/local/app
-
-FROM base AS auth-dev
 COPY package.json package-lock.json ./
-RUN npm install
-COPY spec ./spec
-COPY src ./src
-CMD ["npm", "run", "dev"]
+RUN npm ci
 
-FROM auth-dev AS test
-RUN npm run test
-
-FROM base AS final
+FROM node:lts-alpine AS production
 ENV NODE_ENV=production
-COPY --from=test /usr/local/app/package.json /usr/local/app/package-lock.json ./
-RUN npm ci --production && \
-    npm cache clean --force
+WORKDIR /usr/local/app
+COPY --from=deps /usr/local/app/node_modules ./node_modules
+COPY package.json ./
 COPY src ./src
 EXPOSE 3001
-CMD ["node", "src/index.js"]
+CMD ["npx", "tsx", "src/index.ts"]

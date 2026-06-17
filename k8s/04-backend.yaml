@@ -27,7 +27,7 @@ spec:
             - "until nc -z -w3 mysql 3306; do echo 'Waiting for MySQL...'; sleep 3; done"
       containers:
         - name: backend
-          image: dev-cloud/backend:latest
+          image: dev-cloud/backend:prod
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3000

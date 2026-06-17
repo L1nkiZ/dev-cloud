@@ -20,7 +20,7 @@ spec:
     spec:
       containers:
         - name: client
-          image: dev-cloud/client:latest
+          image: dev-cloud/client:prod
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 80
