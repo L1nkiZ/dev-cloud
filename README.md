@@ -89,9 +89,9 @@ Interface web : http://db.localhost (phpMyAdmin, déjà connecté automatiquemen
 ### Build des images
 
 ```bash
-docker build -t auth-service:latest ./auth-service
-docker build -t backend:latest ./backend
-docker build -t client:latest ./client
+docker build -t dev-cloud/auth-service:prod ./auth-service
+docker build -t dev-cloud/backend:prod ./backend
+docker build -t dev-cloud/client:prod ./client
 ```
 
 ### Déploiement
@@ -132,8 +132,8 @@ Attendre que tous les pods soient en état `Running` avant d'accéder à l'appli
 
 | URL | Service |
 |---|---|
-| http://localhost | Application (via nginx LoadBalancer) |
-| http://localhost/api/health | Santé du backend |
+| http://localhost:8888 | Application (via nginx LoadBalancer) |
+| http://localhost:8888/api/health | Santé du backend |
 | http://localhost:9090 | Prometheus |
 | http://localhost:3333 | Grafana |
 
