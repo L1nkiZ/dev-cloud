@@ -7,6 +7,7 @@ FROM base AS client-base
 COPY package.json package-lock.json ./
 RUN npm install
 COPY .eslintrc.cjs index.html vite.config.ts ./
+COPY tsconfig.json jest.setup.ts ./
 COPY public ./public
 COPY src ./src
 

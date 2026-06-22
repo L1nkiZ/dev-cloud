@@ -12,5 +12,5 @@
         "types": ["jest", "node", "@testing-library/jest-dom"]
     },
     "include": ["src", "jest.setup.ts", "vite.config.ts"],
-    "exclude": ["dist", "node_modules"]
+    "exclude": ["dist", "node_modules","**/*.test.ts","**/*.test.tsx","**/__tests__/**"]
 }

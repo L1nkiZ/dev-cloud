@@ -1,0 +1,108 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-config
+  namespace: dev-cloud
+data:
+  nginx.conf: |
+    events {
+      worker_connections 1024;
+    }
+
+    http {
+      # upstreams point to Kubernetes service DNS names and ports
+      upstream frontend {
+        server client:5173;
+      }
+      upstream backend {
+        server backend:3000;
+      }
+      upstream auth {
+        server auth-service:3001;
+      }
+
+      server {
+        listen 80;
+        server_name localhost;
+
+        # Route API requests to the backend service
+        location /api {
+          resolver kube-dns.kube-system.svc.cluster.local valid=30s;
+          proxy_pass http://backend;
+          proxy_set_header Host $host;
+          proxy_set_header X-Real-IP $remote_addr;
+          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+          proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        # Route auth requests directly to auth-service
+        location /auth {
+          resolver kube-dns.kube-system.svc.cluster.local valid=30s;
+          proxy_pass http://auth;
+          proxy_set_header Host $host;
+          proxy_set_header X-Real-IP $remote_addr;
+          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+          proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        # Everything else served by the frontend (client)
+        location / {
+          resolver kube-dns.kube-system.svc.cluster.local valid=30s;
+          proxy_pass http://frontend;
+          proxy_set_header Host $host;
+          proxy_set_header X-Real-IP $remote_addr;
+          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+          proxy_set_header X-Forwarded-Proto $scheme;
+        }
+      }
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  namespace: dev-cloud
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx-deployment
+  template:
+    metadata:
+      labels:
+        app: nginx-deployment
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - name: nginx-deployment
+          image: nginx:alpine
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"              
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: nginx-config-vc
+              mountPath: /etc/nginx/nginx.conf
+              subPath: nginx.conf
+      volumes:
+        - name: nginx-config-vc
+          configMap:
+            name: nginx-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-service
+  namespace: dev-cloud
+spec:
+  type: LoadBalancer
+  selector:
+    app: nginx-deployment
+  ports:
+    - port: 80
+      targetPort: 80

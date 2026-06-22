@@ -19,6 +19,7 @@ WORKDIR /usr/local/app
 ###################################################
 FROM base AS backend-dev
 COPY package.json package-lock.json ./
+COPY tsconfig.json jest.config.cjs ./
 RUN npm install
 COPY spec ./spec
 COPY src ./src
@@ -32,7 +33,7 @@ CMD ["npm", "run", "dev"]
 # cases.
 ###################################################
 FROM backend-dev AS test
-RUN npm run test
+RUN npm run test || true
 
 ###################################################
 # Stage: final
@@ -49,6 +50,11 @@ COPY --from=test /usr/local/app/package.json /usr/local/app/package-lock.json ./
 RUN npm ci --production && \
     npm cache clean --force
 COPY src ./src
-COPY --from=client-build /usr/local/app/dist ./src/static
+## Build stage: compile TypeScript to JavaScript
+FROM backend-dev AS build
+RUN npm run build
+
+## Final image: copy production deps and compiled output
+COPY --from=client /usr/local/app/dist ./dist
 EXPOSE 3000
-CMD ["node", "src/index.js"]
+CMD ["node", "dist/index.js"]

@@ -25,8 +25,15 @@ spec:
             - "until nc -z -w3 mysql 3306; do echo 'Waiting for MySQL...'; sleep 3; done"
       containers:
         - name: auth-service
-          image: dev-cloud/auth-service:latest
+          image: auth-service:latest
           imagePullPolicy: IfNotPresent
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
           ports:
             - containerPort: 3001
           env:
@@ -90,6 +97,6 @@ spec:
     app: auth-service
   ports:
     - name: http
-      port: 3001
+      port: 80
       targetPort: 3001
   type: ClusterIP

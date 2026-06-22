@@ -1,6 +1,6 @@
 import type { Response } from 'express';
 import type { AuthRequest } from '../middleware/auth.js';
-import db from '../persistence/index';
+import db from '../persistence/index.js';
 import { todoOperationsTotal } from '../metrics.js';
 
 const getItems = async (req: AuthRequest, res: Response) => {

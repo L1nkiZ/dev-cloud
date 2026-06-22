@@ -14,7 +14,7 @@ services:
       - --providers.docker
       - --entrypoints.web.address=:80
     ports:
-      - 80:80
+      - 81:80
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
 
@@ -22,6 +22,7 @@ services:
   # Service: auth-service (port 3001)
   ###################################################
   auth-service:
+    image: auth-service:latest
     build:
       context: ./auth-service
       dockerfile: Dockerfile
@@ -52,6 +53,7 @@ services:
   # Service: backend (todo-service, port 3000)
   ###################################################
   backend:
+    image: backend:latest
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -86,6 +88,7 @@ services:
   # Service: client (React frontend)
   ###################################################
   client:
+    image: client:latest
     build:
       context: ./client
       dockerfile: Dockerfile
@@ -140,7 +143,7 @@ services:
     volumes:
       - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
     ports:
-      - "9090:9090"
+      - "9091:9090"
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
@@ -165,7 +168,7 @@ services:
       - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
       - grafana-data:/var/lib/grafana
     ports:
-      - "3333:3000"
+      - "3338:3000"
     depends_on:
       - prometheus
     labels:
