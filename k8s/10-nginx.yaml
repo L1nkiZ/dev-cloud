@@ -113,6 +113,6 @@ spec:
     app: nginx
   ports:
     - name: http
-      port: 80
+      port: 8888
       targetPort: 80
   type: LoadBalancer
