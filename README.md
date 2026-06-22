@@ -20,6 +20,7 @@ Le projet est composé de trois services applicatifs et d'une stack de monitorin
 - [URLs et accès](#urls-et-accès)
 - [Credentials par défaut](#credentials-par-défaut)
 - [Lancer sans Docker](#lancer-sans-docker)
+- [Lancer avec Kubernetes](#lancer-avec-kubernetes)
 - [Monitoring Prometheus + Grafana](#monitoring-prometheus--grafana)
 - [Commandes utiles](#commandes-utiles)
 - [Tests](#tests)
@@ -78,6 +79,80 @@ Interface web : http://db.localhost (phpMyAdmin, déjà connecté automatiquemen
 | URL | http://localhost:3333 |
 | Utilisateur | `admin` |
 | Mot de passe | `admin` |
+
+## Lancer avec Kubernetes
+
+### Prérequis
+
+- Les images Docker doivent être buildées localement avant le déploiement
+
+### Build des images
+
+```bash
+docker build -t auth-service:latest ./auth-service
+docker build -t backend:latest ./backend
+docker build -t client:latest ./client
+```
+
+### Déploiement
+
+Appliquer tous les manifestes dans l'ordre :
+
+```bash
+kubectl apply -f k8s/
+```
+
+Ou service par service :
+
+```bash
+kubectl apply -f k8s/00-namespace.yaml
+kubectl apply -f k8s/01-configmap.yaml
+kubectl apply -f k8s/02-secret.yaml
+kubectl apply -f k8s/03-mysql.yaml
+kubectl apply -f k8s/04-backend.yaml
+kubectl apply -f k8s/05-phpmyadmin.yaml
+kubectl apply -f k8s/06-auth-service.yaml
+kubectl apply -f k8s/07-prometheus.yaml
+kubectl apply -f k8s/08-grafana.yaml
+kubectl apply -f k8s/09-client.yaml
+kubectl apply -f k8s/10-nginx.yaml
+kubectl apply -f k8s/11-hpa.yaml
+```
+
+### Vérifier l'état des pods
+
+```bash
+kubectl get pods -n dev-cloud
+kubectl get services -n dev-cloud
+```
+
+Attendre que tous les pods soient en état `Running` avant d'accéder à l'application.
+
+### URLs en mode Kubernetes
+
+| URL | Service |
+|---|---|
+| http://localhost | Application (via nginx LoadBalancer) |
+| http://localhost/api/health | Santé du backend |
+| http://localhost:9090 | Prometheus |
+| http://localhost:3333 | Grafana |
+
+### Supprimer le déploiement
+
+```bash
+kubectl delete namespace dev-cloud
+```
+
+```bash
+# 1. Rebuilder l'image
+docker build -t backend:latest ./backend
+
+# 2. Vider le cache containerd de Docker Desktop
+docker exec -it $(docker ps -q --filter name=k8s_node) crictl rmi --prune 2>/dev/null || true
+
+# 3. Forcer le redémarrage du pod
+kubectl rollout restart deployment/backend -n dev-cloud
+```
 
 ## Monitoring Prometheus + Grafana
 
