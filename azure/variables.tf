@@ -96,3 +96,19 @@ variable "key_size" {
   description = "The size in bits of the key to be created."
   default     = 2048
 }
+
+// k8s 
+
+variable "mysql_root_password" {
+  description = "Mot de passe root MySQL"
+  type        = string
+  sensitive   = true
+  default     = "secret"
+}
+
+variable "jwt_secret" {
+  description = "Secret JWT pour l'auth-service"
+  type        = string
+  sensitive   = true
+  default     = "PzsqTDaTiSx0LHbDbk842mKY1svpyDNFi2zHd1xo8It"
+}

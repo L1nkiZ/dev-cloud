@@ -17,6 +17,8 @@ spec:
       labels:
         app: auth-service
     spec:
+      imagePullSecrets:
+        - name: acr-secret
       initContainers:
         - name: wait-for-mysql
           image: busybox:latest
@@ -26,7 +28,7 @@ spec:
             - "until nc -z -w3 mysql 3306; do echo 'Waiting for MySQL...'; sleep 3; done"
       containers:
         - name: auth-service
-          image: dev-cloud/auth-service:prod
+          image: asjhwkregistry.azurecr.io/auth-service:prod
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3001

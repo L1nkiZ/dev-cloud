@@ -18,7 +18,7 @@ resource "azurerm_resource_group" "rg" {
 //Container Registry
 
 resource "azurerm_container_registry" "acr" {
-  name                = "${random_string.name.result}Registry"
+  name                = "${random_string.name.result}registry"
   resource_group_name = azurerm_resource_group.rg.name
   location            = azurerm_resource_group.rg.location
   sku                 = "Basic"
@@ -35,7 +35,7 @@ resource "random_pet" "azurerm_kubernetes_cluster_dns_prefix" {
 }
 
 resource "azurerm_kubernetes_cluster" "k8s" {
-  location            = azurerm_resource_group.rg.location
+  location            = "polandcentral"
   name                = random_pet.azurerm_kubernetes_cluster_name.id
   resource_group_name = azurerm_resource_group.rg.name
   dns_prefix          = random_pet.azurerm_kubernetes_cluster_dns_prefix.id
@@ -46,7 +46,7 @@ resource "azurerm_kubernetes_cluster" "k8s" {
 
   default_node_pool {
     name       = "agentpool"
-    vm_size    = "standard_b2als_v2"
+    vm_size    = "Standard_B2as_v2"
     node_count = var.node_count
   }
   linux_profile {
