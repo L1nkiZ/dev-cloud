@@ -18,9 +18,11 @@ spec:
       labels:
         app: client
     spec:
+      imagePullSecrets:
+        - name: acr-secret
       containers:
         - name: client
-          image: dev-cloud/client:prod
+          image: asjhwkregistry.azurecr.io/client:prod
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 80

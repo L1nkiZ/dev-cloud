@@ -131,3 +131,11 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+
+# terraform / azure
+.terraform/
+.terraform*
+terraform.*
+azure/.terraform/
+azure/.terraform*
+azure/terraform.*
