@@ -1,6 +1,7 @@
 import type { Response } from 'express';
 import type { AuthRequest } from '../middleware/auth.js';
 import db from '../persistence/index';
+import { todoOperationsTotal } from '../metrics.js';
 
 const updateItem = async (req: AuthRequest, res: Response) => {
     if (!req.userId) {
@@ -13,6 +14,7 @@ const updateItem = async (req: AuthRequest, res: Response) => {
         completed: req.body.completed,
     }, req.userId);
     const item = await db.getItem(id, req.userId);
+    todoOperationsTotal.inc({ operation: 'update' });
     res.send(item);
 };
 

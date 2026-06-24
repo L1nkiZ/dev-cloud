@@ -1,0 +1,272 @@
+{
+  "__inputs": [],
+  "__requires": [],
+  "annotations": { "list": [] },
+  "description": "Dev Cloud - Microservices Dashboard",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 100,
+      "title": "Auth Service",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "palette-classic" }, "unit": "short" },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 1 },
+      "id": 1,
+      "options": { "legend": { "displayMode": "list" }, "tooltip": { "mode": "multi" } },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus" },
+          "expr": "rate(auth_login_total{status=\"success\"}[5m])",
+          "legendFormat": "Logins réussis/s"
+        },
+        {
+          "datasource": { "type": "prometheus" },
+          "expr": "rate(auth_login_total{status=\"failure\"}[5m])",
+          "legendFormat": "Logins échoués/s"
+        }
+      ],
+      "title": "Logins (succès vs échecs)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "palette-classic" }, "unit": "short" },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 1 },
+      "id": 2,
+      "targets": [
+        {
+          "datasource": { "type": "prometheus" },
+          "expr": "rate(auth_signup_total{status=\"success\"}[5m])",
+          "legendFormat": "Inscriptions réussies/s"
+        },
+        {
+          "datasource": { "type": "prometheus" },
+          "expr": "rate(auth_signup_total{status=\"failure\"}[5m])",
+          "legendFormat": "Inscriptions échouées/s"
+        }
+      ],
+      "title": "Inscriptions (sign-up)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "thresholds" }, "unit": "short",
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 10 }] }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 1 },
+      "id": 3,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "auto", "textMode": "auto", "colorMode": "background" },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus" },
+          "expr": "rate(auth_validate_total{status=\"failure\"}[5m]) * 60",
+          "legendFormat": "Validations échouées/min"
+        }
+      ],
+      "title": "Échecs de validation token/min",
+      "type": "stat"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 9 },
+      "id": 101,
+      "title": "Todo Service",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "palette-classic" }, "unit": "short" },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 10 },
+      "id": 4,
+      "targets": [
+        {
+          "datasource": { "type": "prometheus" },
+          "expr": "rate(todo_operations_total{operation=\"create\"}[5m])",
+          "legendFormat": "Créations/s"
+        },
+        {
+          "datasource": { "type": "prometheus" },
+          "expr": "rate(todo_operations_total{operation=\"update\"}[5m])",
+          "legendFormat": "Modifications/s"
+        },
+        {
+          "datasource": { "type": "prometheus" },
+          "expr": "rate(todo_operations_total{operation=\"delete\"}[5m])",
+          "legendFormat": "Suppressions/s"
+        },
+        {
+          "datasource": { "type": "prometheus" },
+          "expr": "rate(todo_operations_total{operation=\"list\"}[5m])",
+          "legendFormat": "Lectures/s"
+        }
+      ],
+      "title": "Opérations Todos (CRUD/s)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "palette-classic" }, "unit": "short" },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 10 },
+      "id": 5,
+      "targets": [
+        {
+          "datasource": { "type": "prometheus" },
+          "expr": "increase(todo_operations_total[1h])",
+          "legendFormat": "{{operation}}"
+        }
+      ],
+      "title": "Todos cumulés (dernière heure)",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 18 },
+      "id": 102,
+      "title": "Performance HTTP",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "palette-classic" }, "unit": "s" },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 19 },
+      "id": 6,
+      "targets": [
+        {
+          "datasource": { "type": "prometheus" },
+          "expr": "histogram_quantile(0.5, rate(http_request_duration_seconds_bucket{job=\"auth-service\"}[5m]))",
+          "legendFormat": "auth p50"
+        },
+        {
+          "datasource": { "type": "prometheus" },
+          "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job=\"auth-service\"}[5m]))",
+          "legendFormat": "auth p95"
+        },
+        {
+          "datasource": { "type": "prometheus" },
+          "expr": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{job=\"auth-service\"}[5m]))",
+          "legendFormat": "auth p99"
+        }
+      ],
+      "title": "Latence Auth Service (p50/p95/p99)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "palette-classic" }, "unit": "s" },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 19 },
+      "id": 7,
+      "targets": [
+        {
+          "datasource": { "type": "prometheus" },
+          "expr": "histogram_quantile(0.5, rate(http_request_duration_seconds_bucket{job=\"todo-service\"}[5m]))",
+          "legendFormat": "todo p50"
+        },
+        {
+          "datasource": { "type": "prometheus" },
+          "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job=\"todo-service\"}[5m]))",
+          "legendFormat": "todo p95"
+        },
+        {
+          "datasource": { "type": "prometheus" },
+          "expr": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{job=\"todo-service\"}[5m]))",
+          "legendFormat": "todo p99"
+        }
+      ],
+      "title": "Latence Todo Service (p50/p95/p99)",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 27 },
+      "id": 103,
+      "title": "Ressources Système",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "palette-classic" }, "unit": "bytes" },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 28 },
+      "id": 8,
+      "targets": [
+        {
+          "datasource": { "type": "prometheus" },
+          "expr": "nodejs_heap_size_used_bytes{job=\"auth-service\"}",
+          "legendFormat": "Auth - Heap utilisé"
+        },
+        {
+          "datasource": { "type": "prometheus" },
+          "expr": "nodejs_heap_size_used_bytes{job=\"todo-service\"}",
+          "legendFormat": "Todo - Heap utilisé"
+        }
+      ],
+      "title": "Node.js Heap Memory",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "palette-classic" }, "unit": "s" },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 28 },
+      "id": 9,
+      "targets": [
+        {
+          "datasource": { "type": "prometheus" },
+          "expr": "nodejs_eventloop_lag_seconds{job=\"auth-service\"}",
+          "legendFormat": "Auth - Event Loop Lag"
+        },
+        {
+          "datasource": { "type": "prometheus" },
+          "expr": "nodejs_eventloop_lag_seconds{job=\"todo-service\"}",
+          "legendFormat": "Todo - Event Loop Lag"
+        }
+      ],
+      "title": "Node.js Event Loop Lag",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "10s",
+  "schemaVersion": 39,
+  "tags": ["microservices", "nodejs", "prometheus"],
+  "templating": { "list": [] },
+  "time": { "from": "now-1h", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Dev Cloud - Microservices",
+  "uid": "dev-cloud-microservices",
+  "version": 1
+}

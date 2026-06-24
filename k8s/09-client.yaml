@@ -1,0 +1,65 @@
+###################################################
+# Deployment — Client (React/Vite SPA)
+# Image construite depuis client/Dockerfile target client-prod.
+# Nginx sert les fichiers statiques et gère le SPA routing.
+###################################################
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: client
+  namespace: dev-cloud
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: client
+  template:
+    metadata:
+      labels:
+        app: client
+    spec:
+      imagePullSecrets:
+        - name: acr-secret
+      containers:
+        - name: client
+          image: asjhwkregistry.azurecr.io/client:prod
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
+          resources:
+            requests:
+              memory: "32Mi"
+              cpu: "50m"
+            limits:
+              memory: "64Mi"
+              cpu: "100m"
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 3
+            periodSeconds: 5
+---
+###################################################
+# Service — Client (ClusterIP, interne uniquement)
+# Accessible depuis l'extérieur via le reverse proxy nginx.
+###################################################
+apiVersion: v1
+kind: Service
+metadata:
+  name: client
+  namespace: dev-cloud
+spec:
+  selector:
+    app: client
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+  type: ClusterIP
