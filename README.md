@@ -1,40 +1,22 @@
 # Développer pour le cloud
 
-Application de todolist refactorisée pour le cloud, avec une architecture **microservices**, Docker, TypeScript, tests unitaires, CI/CD et monitoring Prometheus/Grafana.
+Application de todolist refactorisée en architecture **microservices**, déployable via Docker Compose, Kubernetes ou Terraform/Azure.
 
 ## Architecture
 
-Le projet est composé de trois services applicatifs et d'une stack de monitoring :
-
-| Service | Rôle | Port interne |
+| Service | Rôle | Port |
 |---|---|---|
-| `auth-service` | Inscription, connexion, gestion JWT | 3001 |
-| `backend` (todo-service + API Gateway) | CRUD todos, proxy vers auth-service | 3000 |
+| `auth-service` | Inscription, connexion, JWT | 3001 |
+| `backend` | CRUD todos + API Gateway | 3000 |
 | `client` | Interface React/Vite | 5173 |
 | `prometheus` | Collecte des métriques | 9090 |
-| `grafana` | Dashboard de monitoring | 3333 |
+| `grafana` | Dashboards de monitoring | 3333 |
 
-## Table des matières
+---
 
-- [Démarrage rapide](#démarrage-rapide)
-- [URLs et accès](#urls-et-accès)
-- [Credentials par défaut](#credentials-par-défaut)
-- [Lancer sans Docker](#lancer-sans-docker)
-- [Lancer avec Kubernetes](#lancer-avec-kubernetes)
-- [Monitoring Prometheus + Grafana](#monitoring-prometheus--grafana)
-- [Commandes utiles](#commandes-utiles)
-- [Tests](#tests)
-- [CI](#ci)
+## Docker Compose
 
-## Démarrage rapide
-
-### Prérequis
-
-- **Docker Desktop** (recommandé)
-- **Node.js 18+** et npm pour lancer sans Docker
-- **Git** pour cloner le dépôt
-
-### Lancer avec Docker
+### Lancer
 
 ```bash
 git clone <repo>
@@ -42,166 +24,186 @@ cd dev-cloud
 docker compose up --build --watch
 ```
 
-## URLs et accès
+### Conteneurs créés
 
-| URL | Service | Description |
-|---|---|---|
-| http://localhost | Application | Interface Todo (frontend React) |
-| http://localhost/api/health | API | Santé du backend |
-| http://db.localhost | phpMyAdmin | Interface base de données MySQL |
-| http://localhost:9090 | Prometheus | Métriques brutes + targets |
-| http://localhost:3333 | Grafana | Dashboard de monitoring |
-
-## Credentials par défaut
-
-### Compte utilisateur de test (créé automatiquement au démarrage)
-
-| Champ | Valeur |
+| Conteneur | Description |
 |---|---|
-| Email | `user@example.com` |
-| Mot de passe | `password` |
+| `auth-service` | Service d'authentification |
+| `backend` | API Node.js + proxy |
+| `client` | Frontend React/Vite |
+| `mysql` | Base de données |
+| `phpmyadmin` | Interface MySQL |
+| `prometheus` | Métriques |
+| `grafana` | Dashboards |
+| `nginx` | Reverse proxy |
 
-### Base de données MySQL
-
-| Champ | Valeur |
-|---|---|
-| Hôte | `mysql` (interne Docker) |
-| Utilisateur | `root` |
-| Mot de passe | `secret` |
-| Base | `todos` |
-
-Interface web : http://db.localhost (phpMyAdmin, déjà connecté automatiquement)
-
-### Grafana
-
-| Champ | Valeur |
-|---|---|
-| URL | http://localhost:3333 |
-| Utilisateur | `admin` |
-| Mot de passe | `admin` |
-
-## Lancer avec Kubernetes
-
-### Prérequis
-
-- Les images Docker doivent être buildées localement avant le déploiement
-
-### Build des images
-
-```bash
-docker build -t dev-cloud/auth-service:prod ./auth-service
-docker build -t dev-cloud/backend:prod ./backend
-docker build -t dev-cloud/client:prod ./client
-```
-
-### Déploiement
-
-Appliquer tous les manifestes dans l'ordre :
-
-```bash
-kubectl apply -f k8s/
-```
-
-Ou service par service :
-
-```bash
-kubectl apply -f k8s/00-namespace.yaml
-kubectl apply -f k8s/01-configmap.yaml
-kubectl apply -f k8s/02-secret.yaml
-kubectl apply -f k8s/03-mysql.yaml
-kubectl apply -f k8s/04-backend.yaml
-kubectl apply -f k8s/05-phpmyadmin.yaml
-kubectl apply -f k8s/06-auth-service.yaml
-kubectl apply -f k8s/07-prometheus.yaml
-kubectl apply -f k8s/08-grafana.yaml
-kubectl apply -f k8s/09-client.yaml
-kubectl apply -f k8s/10-nginx.yaml
-kubectl apply -f k8s/11-hpa.yaml
-```
-
-### Vérifier l'état des pods
-
-```bash
-kubectl get pods -n dev-cloud
-kubectl get services -n dev-cloud
-```
-
-Attendre que tous les pods soient en état `Running` avant d'accéder à l'application.
-
-### URLs en mode Kubernetes
+### Accès
 
 | URL | Service |
 |---|---|
-| http://localhost:8888 | Application (via nginx LoadBalancer) |
-| http://localhost:8888/api/health | Santé du backend |
+| http://localhost | Application (frontend React) |
+| http://localhost/api/health | Santé du backend |
+| http://db.localhost | phpMyAdmin |
 | http://localhost:9090 | Prometheus |
-| http://localhost:3333 | Grafana |
+| http://localhost:3333 | Grafana (`admin` / `admin`) |
 
-### Supprimer le déploiement
+### Connexion aux conteneurs
+
+# Shell dans un service
+```bash
+docker compose exec backend sh
+docker compose exec auth-service sh
+docker compose exec mysql mysql -u root -p
+```
+
+# Logs en temps réel
+```bash
+docker compose logs -f backend
+```
+
+# État des conteneurs
+```bash
+docker compose ps
+```
+
+### Arrêt
 
 ```bash
+docker compose down        # Conserve les données
+docker compose down -v     # Supprime aussi les volumes
+```
+
+---
+
+## Kubernetes
+
+Prérequis : Docker Desktop avec Kubernetes activé (**Settings > Kubernetes > Enable Kubernetes**)
+
+### Lancer
+
+# 1. Construire les images localement
+```bash
+docker build -f dev-cloud/client:prod ./client/
+docker build -f dev-cloud/auth-service:prod ./auth-service/
+docker build -f dev-cloud/backend:prod ./backend/
+```
+# 2. Déployer localement
+```
+kubectl apply -f k8s-local/
+```
+
+### Ressources créées (namespace `dev-cloud`)
+
+| Manifeste | Ressources |
+|---|---|
+| `00-namespace.yaml` | Namespace |
+| `01-configmap.yaml` | ConfigMap (variables d'env) |
+| `02-secret.yaml` | Secret (mots de passe, JWT) |
+| `03-mysql.yaml` | StatefulSet + Service + PVC |
+| `04-backend.yaml` | Deployment + Service |
+| `05-phpmyadmin.yaml` | Deployment + Service |
+| `06-auth-service.yaml` | Deployment + Service |
+| `07-prometheus.yaml` | Deployment + Service |
+| `08-grafana.yaml` | Deployment + Service |
+| `09-client.yaml` | Deployment + Service |
+| `10-nginx.yaml` | Deployment + LoadBalancer |
+| `11-hpa.yaml` | HorizontalPodAutoscaler |
+
+### Vérifier l'état
+
+```bash
+kubectl get all -n dev-cloud
+kubectl get pods -n dev-cloud -w   # Attendre que tout soit "Running"
+```
+
+### Accès
+
+| URL | Service |
+|---|---|
+| http://localhost | Application |
+| http://localhost:8080 | phpMyAdmin |
+| http://localhost:9090 | Prometheus |
+| http://localhost:3333 | Grafana (`admin` / `admin`) |
+
+### Connexion aux pods
+
+```bash
+# Shell dans un conteneur
+kubectl exec -it -n dev-cloud deployment/backend -- sh
+kubectl exec -it -n dev-cloud statefulset/mysql -- bash
+
+# Logs en temps réel
+kubectl logs -n dev-cloud deployment/backend -f
+
+# Supprimer le déploiement
 kubectl delete namespace dev-cloud
 ```
 
+> Documentation complète : [documentation/dok8s.md](documentation/dok8s.md) et [documentation/KUBERNETES.md](documentation/KUBERNETES.md)
+
+---
+
+## Terraform + Azure (AKS)
+
+> Prérequis : Terraform v1.5+, Azure CLI, un abonnement Azure actif
+
+### Infrastructure provisionnée
+
+- Resource Group (`francecentral`)
+- Virtual Network `10.0.0.0/16` + sous-réseau AKS
+- Cluster AKS — 2 nœuds `Standard_B2s` — Kubernetes 1.29
+- Azure Container Registry (ACR) — SKU Basic
+- Rôle `AcrPull` sur l'identité managée AKS
+
+### Lancer
+
 ```bash
-# 1. Rebuilder l'image
-docker build -t backend:latest ./backend
+# 1. Provisionner l'infrastructure
+cd azure
+terraform init -upgrade
+terraform plan -out main.tfplan
+terraform apply -f main.tfplan
 
-# 2. Vider le cache containerd de Docker Desktop
-docker exec -it $(docker ps -q --filter name=k8s_node) crictl rmi --prune 2>/dev/null || true
+# 2. Build et push de l'image vers l'ACR
+az acr login --name <acr-name> # possiblement --admin-enabled true
+docker login
+docker build -f <acr>.azurecr.io/dev-cloud:prod .
+docker push <acr>.azurecr.io/dev-cloud:prod
 
-# 3. Forcer le redémarrage du pod
-kubectl rollout restart deployment/backend -n dev-cloud
+# 3. Configurer kubectl et déployer
+az aks get-credentials --resource-group <rg> --name <cluster>
+kubectl apply -f k8s/
 ```
 
-## Monitoring Prometheus + Grafana
+### Détruire l'infrastructure
 
-### Grafana — Dashboard principal
+```bash
+terraform plan -out -destroy main.destroy.tfplan
 
-1. Ouvre http://localhost:3333
-2. Identifiants : `admin` / `admin`
-3. Va dans **Dashboards > Browse > Dev Cloud - Microservices**
+terraform apply -f main.destroy.tfplan
+```
 
-| Section | Afficher |
-|---|---|
-| **Auth Service** | Logins réussis/échoués par seconde, inscriptions, échecs de validation token |
-| **Todo Service** | Opérations CRUD (create/update/delete/list) par seconde |
-| **Performance HTTP** | Latence p50 / p95 / p99 pour chaque service |
-| **Ressources Système** | Heap Node.js, Event Loop Lag |
+Documentation complète : [documentation/ADR-005-infrastructure-as-code-terraform.md](documentation/ADR-005-infrastructure-as-code-terraform.md)
 
-### Prometheus — Targets et métriques brutes
+---
 
-1. Ouvre http://localhost:9090
-2. **Status > Targets** — les deux targets `auth-service` et `todo-service` doivent être en état **UP**
-3. Champ de recherche, pour explorer une métrique :
+## Credentials par défaut
 
-| Métrique | Description |
-|---|---|
-| `auth_login_total` | Compteur de logins par statut |
-| `auth_signup_total` | Compteur d'inscriptions |
-| `auth_validate_total` | Validations de token inter-service |
-| `todo_operations_total` | Opérations CRUD todos |
-| `http_request_duration_seconds` | Histogramme de latence |
-| `nodejs_heap_size_used_bytes` | Mémoire heap Node.js |
+| Service | Champ | Valeur |
+|---|---|---|
+| Compte de test | Email | `user@example.com` |
+| Compte de test | Mot de passe | `password` |
+| MySQL | Utilisateur | `root` |
+| MySQL | Mot de passe | `secret` |
+| Grafana | Utilisateur | `admin` |
+| Grafana | Mot de passe | `admin` |
 
-## CI
+---
 
-Le dépôt utilise **GitHub Actions** pour automatiser la validation du code.
+## CI/CD
 
-### Pipeline principal
-
-Déclenché sur push, pull request et lancement manuel :
-
-- Lint backend et frontend en parallèle
-- Contrôle des dépendances
-- Tests backend > tests frontend
+GitHub Actions déclenché sur push/PR :
+- Lint + tests backend et frontend en parallèle
 - Build backend et frontend
-- SonarQube (optionnel, si `SONAR_TOKEN` est configuré dans les secrets GitHub)
-
-### Validation hebdomadaire des dépendances
-
-Workflow séparé, tous les lundis à 7h, pour valider les mises à jour de dépendances.
-
-### Dependabot
-
-Mises à jour npm automatiques chaque semaine pour `backend`, `auth-service` et `client`.
+- SonarQube (si `SONAR_TOKEN` configuré)
+- Validation hebdomadaire des dépendances (Dependabot)

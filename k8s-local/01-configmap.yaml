@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dev-cloud-config
+  namespace: dev-cloud
+data:
+  MYSQL_HOST: "mysql"
+  MYSQL_USER: "root"
+  MYSQL_DB: "todos"
+  NODE_ENV: "production"
+  PORT: "3000"
+  AUTH_SERVICE_URL: "http://auth-service:3001"
+  AUTH_SERVICE_PORT: "3001"
+  JWT_EXPIRY: "7d"
+  FRONTEND_URL: "http://localhost"

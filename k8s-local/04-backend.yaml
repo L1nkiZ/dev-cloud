@@ -1,0 +1,110 @@
+###################################################
+# Deployment — Backend (Node.js API)
+# API accessible en interne uniquement via ClusterIP.
+# Le trafic entrant passe par le reverse proxy nginx.
+###################################################
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: dev-cloud
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      imagePullSecrets:
+        - name: acr-secret
+      initContainers:
+        - name: wait-for-mysql
+          image: busybox:latest
+          command:
+            - sh
+            - -c
+            - "until nc -z -w3 mysql 3306; do echo 'Waiting for MySQL...'; sleep 3; done"
+      containers:
+        - name: backend
+          image: dev-cloud/backend:prod
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+          env:
+            - name: MYSQL_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: dev-cloud-config
+                  key: MYSQL_HOST
+            - name: MYSQL_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: dev-cloud-config
+                  key: MYSQL_USER
+            - name: MYSQL_DB
+              valueFrom:
+                configMapKeyRef:
+                  name: dev-cloud-config
+                  key: MYSQL_DB
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: dev-cloud-secret
+                  key: MYSQL_PASSWORD
+            - name: AUTH_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: dev-cloud-config
+                  key: AUTH_SERVICE_URL
+            - name: NODE_ENV
+              valueFrom:
+                configMapKeyRef:
+                  name: dev-cloud-config
+                  key: NODE_ENV
+            - name: PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: dev-cloud-config
+                  key: PORT
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "300m"
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 3000
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            failureThreshold: 3
+---
+###################################################
+# Service — Backend (ClusterIP, interne uniquement)
+# Accessible via nginx sur /api depuis l'extérieur.
+###################################################
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+  namespace: dev-cloud
+spec:
+  selector:
+    app: backend
+  ports:
+    - name: http
+      port: 3000
+      targetPort: 3000
+  type: ClusterIP
