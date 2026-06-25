@@ -1,3 +1,11 @@
+FROM node:lts-alpine AS client-dev
+WORKDIR /usr/local/app
+COPY package.json package-lock.json ./
+RUN npm ci
+COPY . .
+EXPOSE 5173
+CMD ["npx", "vite", "--host"]
+
 FROM node:lts-alpine AS builder
 WORKDIR /usr/local/app
 COPY package.json package-lock.json ./
