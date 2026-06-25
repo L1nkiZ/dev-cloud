@@ -1,11 +1,5 @@
 # ADR-001 — Architecture Microservices
 
-| Champ | Valeur |
-|---|---|
-| **Statut** | Accepté |
-| **Date** | 2026-06-24 |
-| **Décideurs** | Guillaume G |
-
 ---
 
 ## Contexte

@@ -1,11 +1,5 @@
 # ADR-002 — Authentification JWT Stateless
 
-| Champ | Valeur |
-|---|---|
-| **Statut** | Accepté |
-| **Date** | 2026-06-24 |
-| **Décideurs** | Guillaume G |
-
 ---
 
 ## Contexte

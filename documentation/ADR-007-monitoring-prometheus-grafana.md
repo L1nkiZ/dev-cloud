@@ -1,11 +1,5 @@
 # ADR-007 — Monitoring avec Prometheus et Grafana
 
-| Champ | Valeur |
-|---|---|
-| **Statut** | Accepté |
-| **Date** | 2026-06-24 |
-| **Décideurs** | Guillaume G |
-
 ---
 
 ## Contexte

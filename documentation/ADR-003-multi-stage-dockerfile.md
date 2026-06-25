@@ -1,11 +1,5 @@
 # ADR-003 — Multi-stage Dockerfile de Production
 
-| Champ | Valeur |
-|---|---|
-| **Statut** | Accepté |
-| **Date** | 2026-06-24 |
-| **Décideurs** | Guillaume G |
-
 ---
 
 ## Contexte

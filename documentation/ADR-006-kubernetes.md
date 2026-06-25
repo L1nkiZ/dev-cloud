@@ -1,11 +1,5 @@
 # ADR-006 — Orchestration avec Kubernetes
 
-| Champ | Valeur |
-|---|---|
-| **Statut** | Accepté |
-| **Date** | 2026-06-24 |
-| **Décideurs** | Guillaume G |
-
 ---
 
 ## Contexte

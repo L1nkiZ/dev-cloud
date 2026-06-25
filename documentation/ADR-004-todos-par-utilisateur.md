@@ -1,11 +1,5 @@
 # ADR-004 — Todos liés aux utilisateurs (user_id)
 
-| Champ | Valeur |
-|---|---|
-| **Statut** | Accepté |
-| **Date** | 2026-06-24 |
-| **Décideurs** | Guillaume G |
-
 ---
 
 ## Contexte
