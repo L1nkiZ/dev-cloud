@@ -83,9 +83,9 @@ Prérequis : Docker Desktop avec Kubernetes activé (**Settings > Kubernetes > E
 
 # 1. Construire les images localement
 ```bash
-docker build -f dev-cloud/client:prod ./client/
-docker build -f dev-cloud/auth-service:prod ./auth-service/
-docker build -f dev-cloud/backend:prod ./backend/
+docker build -t dev-cloud/client:prod ./client/
+docker build -t dev-cloud/auth-service:prod ./auth-service/
+docker build -t dev-cloud/backend:prod ./backend/
 ```
 # 2. Déployer localement
 ```
